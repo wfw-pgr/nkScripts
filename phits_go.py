@@ -38,7 +38,7 @@ def phits_go():
     # ------------------------------------------------- #
     inpFile = refFile.replace( "_phits.inp", "_phits_exec.inp" )
     replace__variableDefinition( inpFile=refFile, outFile=inpFile, replace_expression=True, \
-                                 comment_mark="$", define_mark="<define>", variable_mark="@" ):
+                                 comment_mark="$", define_mark="<define>", variable_mark="@" )
     
     # ------------------------------------------------- #
     # --- [4] interpret file path into Windows one  --- #
@@ -205,7 +205,8 @@ def resolve__typeOfString( word=None, priority=["None","int","float","logical",\
 
 def replace__variableDefinition( inpFile=None, lines=None, priority=None, \
                                  replace_expression=True, comment_mark="#", outFile=None, \
-                                 define_mark="<define>", variable_mark="@" ):
+                                 define_mark="<define>", variable_mark="@", \
+                                 escapeType ="UseEscapeSequence" ):
 
     # ------------------------------------------------- #
     # --- [1] Arguments                             --- #
@@ -222,23 +223,44 @@ def replace__variableDefinition( inpFile=None, lines=None, priority=None, \
         priority = ["None","int","float","logical","intarr","fltarr","strarr","string"]
         
     # ------------------------------------------------- #
-    # --- [2] replace variables                     --- #
+    # --- [2] expression of definition              --- #
     # ------------------------------------------------- #
-    vdict     = {}
-    # expr_def  = comment_mark + "\s*" + define_mark +  "\s*@(\S*)\s*=\s*(.*)"
-    expr_def  = "{0}\s*{1}\s*{2}(\S*)\s*=\s*(.*)".format( comment_mark, define_mark, \
-                                                          variable_mark )
+    vdict      = {}
+    Flag__changeComment = False
+    
+    if ( comment_mark in [ "$", "*" ] ):  # --:: Need - Escape-Sequence ... ::-- #
+        if   ( escapeType == "UseEscapeSequence" ):
+            cmt      = "\\" + comment_mark
+            expr_def = "{0}\s*{1}\s*{2}(\S*)\s*=\s*(.*)".format( comment_mark, define_mark, \
+                                                                 variable_mark )                
+        elif ( escapeType == "ReplaceCommentMark" ):
+            original     = comment_mark
+            comment_mark = "#"
+            Flag__changeComment = True
+            expr_def     = "{0}\s*{1}\s*{2}(\S*)\s*=\s*(.*)".format( comment_mark, define_mark,\
+                                                                     variable_mark )
+            for ik,line in enumerate( lines ):
+                lines[ik] = ( lines[ik] ).replace( original, comment_mark )
+
+    else:
+        expr_def     = "{0}\s*{1}\s*{2}(\S*)\s*=\s*(.*)".format( comment_mark, define_mark, \
+                                                                 variable_mark ) 
+
+        
+    # ------------------------------------------------- #
+    # --- [3] parse variables                       --- #
+    # ------------------------------------------------- #
     
     for line in lines:   # 1-line, 1-argument.
-        
+
         # ------------------------------------------------- #
         # ---     search variable notation              --- #
         # ------------------------------------------------- #
-        ret = re.match( expr_def, line.lower() )
+        ret = re.match( expr_def, line )
         if ( ret ):      # Found.
 
             # ------------------------------------------------- #
-            # --- [2-1] Definition of the variable          --- #
+            # --- [3-1] Definition of the variable          --- #
             # ------------------------------------------------- #
             vname        = "@"+ret.group(1)
             if ( comment_mark in ret.group(2) ):
@@ -246,7 +268,7 @@ def replace__variableDefinition( inpFile=None, lines=None, priority=None, \
             else:
                 value = ( ret.group(2) ).strip()
             # ------------------------------------------------- #
-            # --- [2-2] replace variables in value          --- #
+            # --- [3-2] replace variables in value          --- #
             # ------------------------------------------------- #
             for hname in list( vdict.keys() ):
                 ret = re.search( hname, value )
@@ -257,24 +279,24 @@ def replace__variableDefinition( inpFile=None, lines=None, priority=None, \
                     else:
                         sys.exit( "[replace__variableDefinition.py] variables of evaluation must be (int,float,bool). [ERROR] " )
             # ------------------------------------------------- #
-            # --- [2-3] evaluation and store                --- #
+            # --- [3-3] evaluation and store                --- #
             # ------------------------------------------------- #
             value        = "{0}".format( eval( value ) )
             value        = resolve__typeOfString( word=value, priority=priority )
             vdict[vname] = value
 
     # ------------------------------------------------- #
-    # --- [3] replace expression                    --- #
+    # --- [4] replace expression                    --- #
     # ------------------------------------------------- #
     if ( replace_expression ):
         replaced  = []
         vnames    = list( vdict.keys() )
         for line in lines:
-            hline = line
+            hline = ( line )
             if ( len( hline.strip() ) == 0 ):
                 replaced.append( hline )
                 continue
-            if ( ( hline.strip() )[0] == "#" ):
+            if ( ( hline.strip() )[0] == comment_mark ):
                 replaced.append( hline )
                 continue
             for vname in vnames:
@@ -286,9 +308,13 @@ def replace__variableDefinition( inpFile=None, lines=None, priority=None, \
                         value = "[" + ",".join( vdict[vname] ) + "]"
                     hline = hline.replace( vname, value.strip() )
             replaced.append( hline )
-
+            
+        if ( Flag__changeComment ):
+            for ik,line in enumerate( replaced ):
+                replaced[ik] = ( line.replace( comment_mark, original ) )
+            
     # ------------------------------------------------- #
-    # --- [4] return                                --- #
+    # --- [5] return                                --- #
     # ------------------------------------------------- #
     if ( replace_expression ):
         if ( outFile is not None ):
@@ -301,4 +327,5 @@ def replace__variableDefinition( inpFile=None, lines=None, priority=None, \
     else:
         print( "[replace__variableDefinition.py] variables dictionary is returned. " )
         return( vdict    )
-    
+
+
