@@ -231,8 +231,8 @@ def replace__variableDefinition( inpFile=None, lines=None, priority=None, \
     if ( comment_mark in [ "$", "*" ] ):  # --:: Need - Escape-Sequence ... ::-- #
         if   ( escapeType == "UseEscapeSequence" ):
             cmt      = "\\" + comment_mark
-            expr_def = "{0}\s*{1}\s*{2}(\S*)\s*=\s*(.*)".format( comment_mark, define_mark, \
-                                                                 variable_mark )                
+            expr_def = "{0}\s*{1}\s*{2}(\S*)\s*=\s*(.*)".format( cmt, define_mark, variable_mark )
+            
         elif ( escapeType == "ReplaceCommentMark" ):
             original     = comment_mark
             comment_mark = "#"
@@ -256,7 +256,7 @@ def replace__variableDefinition( inpFile=None, lines=None, priority=None, \
         # ------------------------------------------------- #
         # ---     search variable notation              --- #
         # ------------------------------------------------- #
-        ret = re.match( expr_def, line )
+        ret = re.search( expr_def, line )
         if ( ret ):      # Found.
 
             # ------------------------------------------------- #
@@ -327,5 +327,75 @@ def replace__variableDefinition( inpFile=None, lines=None, priority=None, \
     else:
         print( "[replace__variableDefinition.py] variables dictionary is returned. " )
         return( vdict    )
+
+
+
+
+# ========================================================= #
+# ========================================================= #
+# ===
+# ===  main routines                                    === #
+# ===
+# ========================================================= #
+# ========================================================= #
+
+
+
+# ========================================================= #
+# ===  phits_go.py                                      === #
+# ========================================================= #
+
+def phits_go():
+
+    phits_core = r"C:\phits\bin\phitsSend2.bat" # install path of PHITS code. ( Windows-path )
+    
+    # ------------------------------------------------- #
+    # --- [1] parameters to input                   --- #
+    # ------------------------------------------------- #
+    if ( not( len( sys.argv ) == 2 ) ):
+        print( "\n" + "[phits_go.py] [USAGE]  phits_go.py < input file name (*_phits.inp) > " + "\n" )
+        sys.exit( "[STOP]" )
+    else:
+        refFile = sys.argv[1]
+
+    # ------------------------------------------------- #
+    # --- [2] file existence check                  --- #
+    # ------------------------------------------------- #
+    if ( os.path.exists( refFile ) ):
+        pass
+    else:
+        print( "\n" + "[phits_go.py] Can't Find input file... :: {}".format( refFile ) + "\n" )
+        sys.exit( "[STOP]" )
+
+    # ------------------------------------------------- #
+    # --- [3] replace variable expressions          --- #
+    # ------------------------------------------------- #
+    inpFile = refFile.replace( "_phits.inp", "_phits_exec.inp" )
+    replace__variableDefinition( inpFile=refFile, outFile=inpFile, replace_expression=True, \
+                                 comment_mark="$", define_mark="<define>", variable_mark="@" )
+    
+    # ------------------------------------------------- #
+    # --- [4] interpret file path into Windows one  --- #
+    # ------------------------------------------------- #
+    cmd      = "wslpath -w {}".format( inpFile )
+    ret      = subprocess.run( cmd.split(), stdout=subprocess.PIPE )
+    inpFile  = ( ret.stdout.decode() ).strip()
+
+    # ------------------------------------------------- #
+    # --- [5] execute PHITS command                 --- #
+    # ------------------------------------------------- #
+    phits_cmd = 'cmd.exe /c "{0} {1}"'.format( phits_core, inpFile )
+    subprocess.run( phits_cmd, shell=True )
+
+
+# ========================================================= #
+# ===   Execution of Pragram                            === #
+# ========================================================= #
+
+if ( __name__=="__main__" ):
+    phits_go()
+
+
+
 
 
