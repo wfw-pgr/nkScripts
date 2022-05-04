@@ -307,7 +307,8 @@ def phits_go():
     # ------------------------------------------------- #
     # --- [3] replace variable expressions          --- #
     # ------------------------------------------------- #
-    inpFile = refFile.replace( "_phits.inp", "_phits_exec.inp" )
+    dirpath = os.path.dirname( os.path.abspath( inpFile ) )
+    inpFile = os.path.join( dirpath, "execute_phits.inp" )
     replace__variableDefinition( inpFile=refFile, outFile=inpFile, replace_expression=True, \
                                  comment_mark="$", define_mark="<define>", variable_mark="@" )
     
