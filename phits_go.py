@@ -218,7 +218,10 @@ def replace__variableDefinition( inpFile=None, lines=None, priority=None, \
             # ------------------------------------------------- #
             # --- [3-3] evaluation and store                --- #
             # ------------------------------------------------- #
-            value        = "{0}".format( eval( value ) )
+            try:
+                value    = "{0}".format( eval( value ) )
+            except:
+                value    = "{0}".format(       value   )
             value        = resolve__typeOfString( word=value, priority=priority )
             vdict[vname] = value
 
