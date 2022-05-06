@@ -287,17 +287,37 @@ def replace__variableDefinition( inpFile=None, lines=None, priority=None, \
 
 def phits_go():
 
-    phits_core = r"C:\phits\bin\phitsSend2.bat" # install path of PHITS code. ( Windows-path )
-    
     # ------------------------------------------------- #
     # --- [1] parameters to input                   --- #
     # ------------------------------------------------- #
-    if ( not( len( sys.argv ) == 2 ) ):
-        print( "\n" + "[phits_go.py] [USAGE]  phits_go.py < input file name (*_phits.inp) > " + "\n" )
-        sys.exit( "[STOP]" )
-    else:
-        refFile = sys.argv[1]
+    import argparse
+    parser = argparse.ArgumentParser(description="PHITS driver program.")
+    parser.add_argument("refFile"        , help="PHITS's input file path." )
+    parser.add_argument("-c", "--convert", help="PHITS's input file path." )
+    parser.add_argument("--os"           , help="os selection." )
+    parser.add_argument("--phits_win"    , help="PHITS's path in windows." )
+    parser.add_argument("--phits_lin"    , help="PHITS's path in linux."   )
 
+    args      = parser.parse_args()
+    refFile   = args.refFile
+
+    if   ( args.os is None ):
+        os_system = "linux"
+    elif ( args.os in ["linux","windows"] ):
+        os_system = args.os
+    else:
+        os_system = "linux"
+
+    if   ( args.phits_win is not None ):
+        phits_win = args.phits_win
+    else:
+        phits_win = r"C:\phits\bin\phitsSend2.bat" # install path of PHITS code. ( Windows-path )
+
+    if   ( args.phits_lin is not None ):
+        phits_lin = args.phits_lin
+    else:
+        phits_lin = r"phits.sh"                    # install path of PHITS code. ( Windows-path )
+    
     # ------------------------------------------------- #
     # --- [2] file existence check                  --- #
     # ------------------------------------------------- #
@@ -318,16 +338,22 @@ def phits_go():
     # ------------------------------------------------- #
     # --- [4] interpret file path into Windows one  --- #
     # ------------------------------------------------- #
-    cmd      = "wslpath -w {}".format( inpFile )
-    ret      = subprocess.run( cmd.split(), stdout=subprocess.PIPE )
-    inpFile  = ( ret.stdout.decode() ).strip()
+    if ( os_system.lower() == "windows" ):
+        cmd      = "wslpath -w {}".format( inpFile )
+        ret      = subprocess.run( cmd.split(), stdout=subprocess.PIPE )
+        inpFile  = ( ret.stdout.decode() ).strip()
 
     # ------------------------------------------------- #
     # --- [5] execute PHITS command                 --- #
     # ------------------------------------------------- #
-    phits_cmd = 'cmd.exe /c "{0} {1}"'.format( phits_core, inpFile )
-    subprocess.run( phits_cmd, shell=True )
-
+    if   ( os_system.lower() == "windows" ):
+        phits_cmd = 'cmd.exe /c "{0} {1}"'.format( phits_win, inpFile )
+        subprocess.run( phits_cmd, shell=True )
+        
+    elif ( os_system.lower() == "linux"   ):
+        phits_cmd = "{0} {1}".format( phits_lin, inpFile )
+        subprocess.run( phits_cmd, shell=True )
+        
 
 # ========================================================= #
 # ===   Execution of Pragram                            === #
