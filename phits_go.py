@@ -288,26 +288,30 @@ def replace__variableDefinition( inpFile=None, lines=None, priority=None, \
 def phits_go():
 
     # ------------------------------------------------- #
-    # --- [1] parameters to input                   --- #
+    # --- [1] arguments                             --- #
     # ------------------------------------------------- #
     import argparse
     parser = argparse.ArgumentParser(description="PHITS driver program.")
-    parser.add_argument("refFile"        , help="PHITS's input file path." )
-    parser.add_argument("-c", "--convert", help="PHITS's input file path." )
-    parser.add_argument("--os"           , help="os selection." )
-    parser.add_argument("--phits_win"    , help="PHITS's path in windows." )
-    parser.add_argument("--phits_lin"    , help="PHITS's path in linux."   )
+    parser.add_argument("refFile"             , help="PHITS's input file path." )
+    parser.add_argument("--os"                , help="os selection." )
+    parser.add_argument("--phits_win"         , help="PHITS's path in windows." )
+    parser.add_argument("--phits_lin"         , help="PHITS's path in linux."   )
+    parser.add_argument("-c", "--convert_only", help="convert input file only", \
+                        action="store_true" )
+    args         = parser.parse_args()
+    refFile      = args.refFile
+    convert_only = args.convert_only
 
-    args      = parser.parse_args()
-    refFile   = args.refFile
-
+    # ------------------------------------------------- #
+    # --- [2] optional arguments                    --- #
+    # ------------------------------------------------- #
     if   ( args.os is None ):
         os_system = "linux"
     elif ( args.os in ["linux","windows"] ):
         os_system = args.os
     else:
         os_system = "linux"
-
+        
     if   ( args.phits_win is not None ):
         phits_win = args.phits_win
     else:
@@ -319,7 +323,7 @@ def phits_go():
         phits_lin = r"phits.sh"                    # install path of PHITS code. ( Windows-path )
     
     # ------------------------------------------------- #
-    # --- [2] file existence check                  --- #
+    # --- [3] file existence check                  --- #
     # ------------------------------------------------- #
     if ( os.path.exists( refFile ) ):
         pass
@@ -328,15 +332,17 @@ def phits_go():
         sys.exit( "[STOP]" )
 
     # ------------------------------------------------- #
-    # --- [3] replace variable expressions          --- #
+    # --- [4] replace variable expressions          --- #
     # ------------------------------------------------- #
     dirpath = os.path.dirname( os.path.abspath( refFile ) )
     inpFile = os.path.join( dirpath, "execute_phits.inp" )
     replace__variableDefinition( inpFile=refFile, outFile=inpFile, replace_expression=True, \
                                  comment_mark="$", define_mark="<define>", variable_mark="@" )
+    if ( convert_only ):
+        return()
     
     # ------------------------------------------------- #
-    # --- [4] interpret file path into Windows one  --- #
+    # --- [5] interpret file path into Windows one  --- #
     # ------------------------------------------------- #
     if ( os_system.lower() == "windows" ):
         cmd      = "wslpath -w {}".format( inpFile )
@@ -344,7 +350,7 @@ def phits_go():
         inpFile  = ( ret.stdout.decode() ).strip()
 
     # ------------------------------------------------- #
-    # --- [5] execute PHITS command                 --- #
+    # --- [6] execute PHITS command                 --- #
     # ------------------------------------------------- #
     if   ( os_system.lower() == "windows" ):
         phits_cmd = 'cmd.exe /c "{0} {1}"'.format( phits_win, inpFile )
@@ -353,7 +359,7 @@ def phits_go():
     elif ( os_system.lower() == "linux"   ):
         phits_cmd = "{0} {1}".format( phits_lin, inpFile )
         subprocess.run( phits_cmd, shell=True )
-        
+    return()
 
 # ========================================================= #
 # ===   Execution of Pragram                            === #
