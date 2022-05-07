@@ -272,6 +272,95 @@ def replace__variableDefinition( inpFile=None, lines=None, priority=None, \
 
 
 # ========================================================= #
+# ===  include__dividedFile.py                          === #
+# ========================================================= #
+
+def include__dividedFile( inpFile=None, outFile=None, lines=None, \
+                          comment_mark="#", include_mark="<include>", escapeType ="UseEscapeSequence" ):
+
+    # ------------------------------------------------- #
+    # --- [1] Arguments                             --- #
+    # ------------------------------------------------- #
+    if ( lines is None ):
+        if ( inpFile is None ):
+            sys.exit( "[include__dividedFile.py] lines, inpFile == ???? [ERROR] " )
+        else:
+            with open( inpFile, "r" ) as f:
+                lines = f.readlines()
+    if ( type( lines ) is str ):
+        lines = [ lines ]
+        
+    # ------------------------------------------------- #
+    # --- [2] expression of definition              --- #
+    # ------------------------------------------------- #
+    vdict               = {}
+    Flag__changeComment = False
+    
+    if ( comment_mark in [ "$", "*" ] ):  # --:: Need - Escape-Sequence ... ::-- #
+        if   ( escapeType == "UseEscapeSequence" ):
+            cmt      = "\\" + comment_mark
+            expr_def = "{0}\s*{1}\s*filepath\s*=\s*(.*)".format( cmt, include_mark )
+            
+        elif ( escapeType == "ReplaceCommentMark" ):
+            original     = comment_mark
+            comment_mark = "#"
+            Flag__changeComment = True
+            expr_def     = "{0}\s*{1}\s*filepath\s*=\s*(.*)".format( comment_mark, include_mark )
+            for ik,line in enumerate( lines ):
+                lines[ik] = ( lines[ik] ).replace( original, comment_mark )
+
+    else:
+        expr_def     = "{0}\s*{1}\s*filepath\s*=\s*(.*)".format( comment_mark, include_mark )
+
+        
+    # ------------------------------------------------- #
+    # --- [3] parse variables                       --- #
+    # ------------------------------------------------- #
+
+    stack = []
+    for ik,line in enumerate(lines):   # 1-line, 1-argument.
+
+        stack += [line]
+        
+        # ------------------------------------------------- #
+        # ---     search variable notation              --- #
+        # ------------------------------------------------- #
+        ret = re.search( expr_def, line )
+        if ( ret ):      # Found.
+
+            # ------------------------------------------------- #
+            # --- [3-1] get file path                       --- #
+            # ------------------------------------------------- #
+            if ( comment_mark in ret.group(1) ):
+                filepath = ( ( ( ret.group(1) ).split(comment_mark) )[0] ).strip()
+            else:
+                filepath = ( ret.group(1) ).strip()
+
+            # ------------------------------------------------- #
+            # --- [3-2] file existing check & load          --- #
+            # ------------------------------------------------- #
+            if ( os.path.exists( filepath ) ):
+                with open( filepath, "r" ) as g:
+                    inc = g.readlines()
+                stack += inc
+            else:
+                print( "[include__dividedFile.py] Cannot Find such a file.... [ERROR] " )
+                print( "[include__dividedFile.py] filepath :: {} ".format( filepath   ) )
+
+    # ------------------------------------------------- #
+    # --- [4] return                                --- #
+    # ------------------------------------------------- #
+    if ( outFile is not None ):
+        text = "".join( stack )
+        with open( outFile, "w" ) as f:
+            f.write( text )
+        print( "[include__dividedFile.py] output :: {}".format( outFile ) )
+    print( "[include__dividedFile.py] inserted lines is returned." + "\n" )
+    return( stack )
+
+
+
+# ========================================================= #
 # ========================================================= #
 # ===
 # ===  main routines                                    === #
@@ -332,17 +421,23 @@ def phits_go():
         sys.exit( "[STOP]" )
 
     # ------------------------------------------------- #
-    # --- [4] replace variable expressions          --- #
+    # --- [4] include divided files                 --- #
     # ------------------------------------------------- #
     dirpath = os.path.dirname( os.path.abspath( refFile ) )
-    inpFile = os.path.join( dirpath, "execute_phits.inp" )
-    replace__variableDefinition( inpFile=refFile, outFile=inpFile, replace_expression=True, \
+    inpFile = os.path.join( dirpath, "execute_phits.inp"  )
+    include__dividedFile( inpFile=refFile , outFile=inpFile, \
+                          comment_mark="$", include_mark="<include>" )
+    
+    # ------------------------------------------------- #
+    # --- [5] replace variable expressions          --- #
+    # ------------------------------------------------- #
+    replace__variableDefinition( inpFile=inpFile, outFile=inpFile, replace_expression=True, \
                                  comment_mark="$", define_mark="<define>", variable_mark="@" )
     if ( convert_only ):
         return()
     
     # ------------------------------------------------- #
-    # --- [5] interpret file path into Windows one  --- #
+    # --- [6] interpret file path into Windows one  --- #
     # ------------------------------------------------- #
     if ( os_system.lower() == "windows" ):
         cmd      = "wslpath -w {}".format( inpFile )
@@ -350,7 +445,7 @@ def phits_go():
         inpFile  = ( ret.stdout.decode() ).strip()
 
     # ------------------------------------------------- #
-    # --- [6] execute PHITS command                 --- #
+    # --- [7] execute PHITS command                 --- #
     # ------------------------------------------------- #
     if   ( os_system.lower() == "windows" ):
         phits_cmd = 'cmd.exe /c "{0} {1}"'.format( phits_win, inpFile )
@@ -367,8 +462,3 @@ def phits_go():
 
 if ( __name__=="__main__" ):
     phits_go()
-
-
-
-
-

@@ -1,0 +1,17 @@
+
+[Parameter]
+
+   icntrl  = 8
+   file(1) = c:/phits/
+
+$ <define> @xMin = 0.1
+$ <define> @xMax = 0.2
+$ <define> @yMin = 0.3
+$ <define> @yMax = 0.4
+$ <define> @zMin = 0.5
+$ <define> @zMax = 0.6
+
+[surface]
+   10     rpp    @xMin @xMax @yMin @yMax @zMin @zMax
+
+$ <include> filepath = test/material_phits.inp
