@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-import os, sys, subprocess, re
+import os, sys, subprocess, re, time
+import datetime as dt
 
 # ========================================================= #
 # ========================================================= #
@@ -526,6 +527,7 @@ def phits_go():
     # ------------------------------------------------- #
     # --- [7] execute PHITS command                 --- #
     # ------------------------------------------------- #
+    stime = time.time()
     if   ( os_system.lower() == "windows" ):
         phits_cmd = 'cmd.exe /c "{0} {1}"'.format( phits_win, inpFile )
         subprocess.run( phits_cmd, shell=True )
@@ -533,7 +535,11 @@ def phits_go():
     elif ( os_system.lower() == "linux"   ):
         phits_cmd = "{0} {1}".format( phits_lin, inpFile )
         subprocess.run( phits_cmd, shell=True )
-
+    etime   = time.time()
+    elapsed = etime - stime
+    hms     = dt.datetime.strftime( dt.datetime.utcfromtimestamp( elapsed ),'%H:%M:%S' )
+    print( "\n" + "[phits_go.py] elapsed time :: {} ".format( hms ) + "\n" )
+    
     # ------------------------------------------------- #
     # --- [8] execute postProcess command           --- #
     # ------------------------------------------------- #
