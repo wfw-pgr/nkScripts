@@ -215,6 +215,8 @@ def replace__variableDefinition( inpFile=None, lines=None, priority=None, \
                         hvalue = "{0}".format( vdict[hname] )
                         value  = value.replace( hname, hvalue )
                     else:
+                        print( "hname :: ", hname )
+                        print( "value :: ", value )
                         sys.exit( "[replace__variableDefinition.py] variables of evaluation must be (int,float,bool). [ERROR] " )
             # ------------------------------------------------- #
             # --- [3-3] evaluation and store                --- #
