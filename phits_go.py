@@ -279,7 +279,8 @@ def replace__variableDefinition( inpFile=None, lines=None, priority=None, \
 # ========================================================= #
 
 def include__dividedFile( inpFile=None, outFile=None, lines=None, \
-                          comment_mark="#", include_mark="<include>", escapeType ="UseEscapeSequence" ):
+                          comment_mark="#", include_mark="<include>", \
+                          escapeType ="UseEscapeSequence" ):
 
     # ------------------------------------------------- #
     # --- [1] Arguments                             --- #
@@ -321,8 +322,15 @@ def include__dividedFile( inpFile=None, outFile=None, lines=None, \
     # ------------------------------------------------- #
 
     stack = []
-    for ik,line in enumerate(lines):   # 1-line, 1-argument.
+    while( True ):    # infinite loop
 
+        # ------------------------------------------------- #
+        # ---  check the contents of the lines          --- #
+        # ------------------------------------------------- #
+        if ( len(lines) == 0 ):
+            break
+        else:
+            line   = lines.pop(0)
         stack += [line]
         
         # ------------------------------------------------- #
@@ -345,7 +353,7 @@ def include__dividedFile( inpFile=None, outFile=None, lines=None, \
             if ( os.path.exists( filepath ) ):
                 with open( filepath, "r" ) as g:
                     inc = g.readlines()
-                stack += inc
+                lines = inc + lines
             else:
                 print( "[include__dividedFile.py] Cannot Find such a file.... [ERROR] " )
                 print( "[include__dividedFile.py] filepath :: {} ".format( filepath   ) )
