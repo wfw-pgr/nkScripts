@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import os, sys, subprocess, re, time
+import os, sys, subprocess, re, time, json
 import datetime as dt
+import pandas   as pd
 
 # ========================================================= #
 # ========================================================= #
@@ -456,7 +457,7 @@ def command__postProcess( inpFile=None, lines=None, comment_mark="#", execute=Tr
 # ========================================================= #
 
 def show__section( section=None, length=71, bar_mark="-", comment_mark="#", sidebarLen=3, sideSpaceLen=1, \
-                   newLine=True ):
+                   newLine=True, silent=False ):
 
     # ------------------------------------------------- #
     # --- [1] arguments                             --- #
@@ -487,7 +488,10 @@ def show__section( section=None, length=71, bar_mark="-", comment_mark="#", side
     line2          = side2 + space_f + section + space_r + side2[::-1] + "\n"
     if ( newLine ):
         lines = "\n" + line1 + line2 + line1 + "\n"
-    print( lines )
+    if ( silent ):
+        pass
+    else:
+        print( lines )
     return( lines )
 
 
@@ -496,12 +500,14 @@ def show__section( section=None, length=71, bar_mark="-", comment_mark="#", side
 # ===  materials__fromCSV                               === #
 # ========================================================= #
 
-def materials__fromCSV( inpFile=None ):
+def materials__fromCSV( inpFile=None, outFile=None, jsonFile=None ):
 
     # ------------------------------------------------- #
     # --- [1] arguments                             --- #
     # ------------------------------------------------- #
-    if ( inpFile is None ): sys.exit( "[materials__fromCSV.py] inpFile == ???" )
+    if ( inpFile  is None ): sys.exit( "[materials__fromCSV.py] inpFile == ???" )
+    if ( outFile  is None ): outFile  = inpFile.replace( ".csv", "_phits.inp" )
+    if ( jsonFile is None ): jsonFile = inpFile.replace( ".csv", ".json"      )
 
     # ------------------------------------------------- #
     # --- [2] read csv file                         --- #
@@ -531,14 +537,12 @@ def materials__fromCSV( inpFile=None ):
     # ------------------------------------------------- #
     # --- [4] save contents as a .json file         --- #
     # ------------------------------------------------- #
-    jsonFile = "dat/material.json"
     with open( jsonFile, "w" ) as f:
         json.dump( materials, f, indent=2 )
     
     # ------------------------------------------------- #
     # --- [5] format as a material_phits.inp        --- #
     # ------------------------------------------------- #
-    outFile = "dat/material_phits.inp"
     ret     = save__materialFile( materials=materials, outFile=outFile )
     return()
 
@@ -560,14 +564,14 @@ def save__materialFile( outFile=None, materials=None, keys=None ):
     # --- [2] make contents                         --- #
     # ------------------------------------------------- #
     pageTitle = show__section( section="material_phits.inp (PHITS)", \
-                               bar_mark="=", comment_mark="$$" )
+                               bar_mark="=", comment_mark="$$", silent=True )
     matTitle  = show__section( section="material section (PHITS)", \
-                               bar_mark="-", comment_mark="$$" )
+                               bar_mark="-", comment_mark="$$", silent=True )
     block1    = pageTitle + matTitle
     for key in keys:
         item    = materials[key]
         title   = "matNum[{0}] :: {1}".format( item["MaterialNumber"], item["Name"] )
-        section = show__section( section=title, bar_mark="-", comment_mark="$$" )
+        section = show__section( section=title, bar_mark="-", comment_mark="$$", silent=True )
         if ( len( item["Comment"] ) > 0 ):
             comment = "$$ comment :: {}\n".format( item["Comment"] )
         else:
@@ -587,7 +591,7 @@ def save__materialFile( outFile=None, materials=None, keys=None ):
     # --- [3] matNameColor section                  --- #
     # ------------------------------------------------- #
     colTitle = show__section( section="matNameColor section (PHITS)", \
-                              bar_mark="-", comment_mark="$$" )
+                              bar_mark="-", comment_mark="$$", silent=True )
     block2   = colTitle + "\n" + "[MatNameColor]\n"
     block2  += "    {0:<4} {1:<18} {2:<10} {3:<20}\n".format("mat","name","size","color")
     for key in keys:

@@ -6,12 +6,14 @@ import os, sys, json
 # ===  materials__fromCSV                               === #
 # ========================================================= #
 
-def materials__fromCSV( inpFile=None ):
+def materials__fromCSV( inpFile=None, outFile=None, jsonFile=None ):
 
     # ------------------------------------------------- #
     # --- [1] arguments                             --- #
     # ------------------------------------------------- #
-    if ( inpFile is None ): sys.exit( "[materials__fromCSV.py] inpFile == ???" )
+    if ( inpFile  is None ): sys.exit( "[materials__fromCSV.py] inpFile == ???" )
+    if ( outFile  is None ): outFile  = inpFile.replace( ".csv", "_phits.inp" )
+    if ( jsonFile is None ): jsonFile = inpFile.replace( ".csv", ".json"      )
 
     # ------------------------------------------------- #
     # --- [2] read csv file                         --- #
@@ -41,14 +43,12 @@ def materials__fromCSV( inpFile=None ):
     # ------------------------------------------------- #
     # --- [4] save contents as a .json file         --- #
     # ------------------------------------------------- #
-    jsonFile = "dat/material.json"
     with open( jsonFile, "w" ) as f:
         json.dump( materials, f, indent=2 )
     
     # ------------------------------------------------- #
     # --- [5] format as a material_phits.inp        --- #
     # ------------------------------------------------- #
-    outFile = "dat/material_phits.inp"
     ret     = save__materialFile( materials=materials, outFile=outFile )
     return()
 

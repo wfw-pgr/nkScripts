@@ -1,0 +1,6 @@
+"Name","MaterialNumber","Density","CharacterSize","Color","Comment","Atom01","Amount01","Atom02","Amount02","Atom03","Amount03","Atom04","Amount04","Atom05","Amount05","Atom06","Amount06","Atom07","Amount07","Atom08","Amount08","Atom09","Amount09","Atom10","Amount10","Atom11","Amount11","Atom12","Amount12","Atom13","Amount13","Atom14","Amount14"
+"Air1",1,1.0e-3,2,"cyan","this is special.","H",-1.0e-3,"C",-1.26e-02,"N",-7.55e+1,"O",-2.32e+1
+"Air2",2,1.0e-3,2,"cyan","","H",-1.0e-3,"C",-1.26e-02
+"Air3",0,1.0e-3,2,"cyan","","H",-1.0e-3,"C",-1.26e-02,"N",-7.55e+1,"O",-2.32e+1
+"Air4",3,1.0e-3,2,"cyan","","H",-1.0e-3,"C",-1.26e-02
+"Air5",4,1.0e-3,2,"cyan","","H",-1.0e-3,"C",-1.26e-02,"N",-7.55e+1,"O",-2.32e+1
