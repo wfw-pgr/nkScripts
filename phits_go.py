@@ -19,7 +19,7 @@ import pandas   as pd
 
 def resolve__typeOfString( word=None, priority=["None","int","float","logical",\
                                                 "intarr","fltarr","strarr", "string"] ):
-
+    
     # ------------------------------------------------- #
     # --- [1] arguments check                       --- #
     # ------------------------------------------------- #
@@ -356,8 +356,10 @@ def include__dividedFile( inpFile=None, outFile=None, lines=None, \
                     inc = g.readlines()
                 lines = inc + lines
             else:
-                print( "[include__dividedFile.py] Cannot Find such a file.... [ERROR] " )
-                print( "[include__dividedFile.py] filepath :: {} ".format( filepath   ) )
+                
+                print( "\033[31m" + "[include__dividedFile.py] Cannot Find such a file.... [ERROR] " + "\033[0m" )
+                print( "\033[31m" + "[include__dividedFile.py] filepath :: {} ".format( filepath   ) + "\033[0m" )
+                sys.exit()
 
     # ------------------------------------------------- #
     # --- [4] return                                --- #
@@ -369,7 +371,6 @@ def include__dividedFile( inpFile=None, outFile=None, lines=None, \
         print( "[include__dividedFile.py] output :: {}".format( outFile ) )
     print( "[include__dividedFile.py] inserted lines is returned." + "\n" )
     return( stack )
-
 
 
 # ========================================================= #
