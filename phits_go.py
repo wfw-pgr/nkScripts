@@ -685,7 +685,7 @@ def phits_go():
         sys.exit( "[STOP]" )
 
     if ( flag_material ):
-        if ( os.path.exists( materialFile ) ):
+        if not( os.path.exists( materialFile ) ):
             print( "\n" + "[phits_go.py] Can't Find material file... :: {}"\
                    .format( materialFile ) + "\n" )
             sys.exit( "[STOP]" )
