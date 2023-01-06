@@ -650,7 +650,7 @@ def phits_go():
 
     if ( materialFile  is not None ):
         flag_material = True
-    if ( flag_material and ( flag_material is None ) ):
+    if ( flag_material and ( materialFile is None ) ):
         materialFile  = "inp/materials.csv"
 
     show__section( "Conversion :: _phits.inp >> .inp File", length=71 )
