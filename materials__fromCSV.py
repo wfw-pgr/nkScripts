@@ -69,11 +69,12 @@ def save__materialFile( outFile=None, materials=None, keys=None ):
     # ------------------------------------------------- #
     # --- [2] make contents                         --- #
     # ------------------------------------------------- #
-    pageTitle = show__section( section="material_phits.inp (PHITS)", \
-                               bar_mark="=", comment_mark="$$" )
-    matTitle  = show__section( section="material section (PHITS)", \
-                               bar_mark="-", comment_mark="$$" )
-    block1    = pageTitle + matTitle
+    pageTitle  = show__section( section="material_phits.inp (PHITS)", \
+                                bar_mark="=", comment_mark="$$" )
+    matTitle   = show__section( section="Material Section", \
+                                bar_mark="-", comment_mark="$$" )
+    matSection = "\n" + "[Material]" + "\n"
+    block1     = pageTitle + matTitle + matSection
     for key in keys:
         item    = materials[key]
         title   = "matNum[{0}] :: {1}".format( item["MaterialNumber"], item["Name"] )
