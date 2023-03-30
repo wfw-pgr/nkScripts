@@ -195,7 +195,7 @@ def replace__variableDefinition( inpFile=None, lines=None, priority=None, \
         # ------------------------------------------------- #
         # ---     search variable notation              --- #
         # ------------------------------------------------- #
-        ret = re.search( expr_def, line )
+        ret = re.match( expr_def, line )
         if ( ret ):      # Found.
 
             # ------------------------------------------------- #
@@ -337,7 +337,7 @@ def include__dividedFile( inpFile=None, outFile=None, lines=None, \
         # ------------------------------------------------- #
         # ---     search variable notation              --- #
         # ------------------------------------------------- #
-        ret = re.search( expr_def, line )
+        ret = re.match( expr_def, line )
         if ( ret ):      # Found.
 
             # ------------------------------------------------- #
@@ -425,7 +425,7 @@ def command__postProcess( inpFile=None, lines=None, comment_mark="#", execute=Tr
         # ------------------------------------------------- #
         # ---     search variable notation              --- #
         # ------------------------------------------------- #
-        ret = re.search( expr_def, line )
+        ret = re.match( expr_def, line )
         if ( ret ):      # Found.
             
             # ------------------------------------------------- #
