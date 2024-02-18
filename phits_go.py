@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/local/bin/python3.10
 
 import os, sys, subprocess, re, time, json
 import datetime as dt
