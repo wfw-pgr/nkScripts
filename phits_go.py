@@ -431,8 +431,13 @@ def command__postProcess( inpFile=None, lines=None, comment_mark="#", execute=Tr
             # ------------------------------------------------- #
             # --- [3-1] get file path                       --- #
             # ------------------------------------------------- #
-            if ( comment_mark in ret.group(1) ):
-                command = ( ( ( ret.group(1) ).split(comment_mark) )[0] ).strip()
+            if ( comment_mark in [ "$", "*"] ):
+                comment_mark_ = comment_mark*2
+            else:
+                comment_mark_ = comment_mark
+
+            if ( comment_mark_ in ret.group(1) ):
+                command = ( ( ( ret.group(1) ).split(comment_mark_) )[0] ).strip()
             else:
                 command = ( ret.group(1) ).strip()
 
