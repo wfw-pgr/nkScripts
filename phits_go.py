@@ -479,7 +479,7 @@ def include__dividedFile( inpFile=None, outFile=None, lines=None, \
         # ------------------------------------------------- #
         # ---     search variable notation              --- #
         # ------------------------------------------------- #
-        ret = re.match( expr_def, line )
+        ret = re.search( expr_def, line )
         if ( ret ):      # Found.
 
             # ------------------------------------------------- #
