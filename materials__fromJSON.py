@@ -4,8 +4,8 @@ import os, sys, json5
 # ===  materials__fromJSON.py                           === #
 # ========================================================= #
 
-def materials__fromJSON( inpFile=None, outFile=None ):
-
+def materials__fromJSON( inpFile=None, outFile=None, keys=None ):
+    
     # ------------------------------------------------- #
     # --- [1] arguments                             --- #
     # ------------------------------------------------- #
@@ -22,11 +22,15 @@ def materials__fromJSON( inpFile=None, outFile=None ):
         settings = matDB.pop( "settings" )
     except KeyError:
         settings = None
-
+    
+    if ( ( keys is None ) and ( settings is not None ) ) :
+        if ( "materialList" in settings ):
+            keys = settings["materialList"]
+            
     # ------------------------------------------------- #
     # --- [3] format as a material_phits.inp        --- #
     # ------------------------------------------------- #
-    ret = generate__materialFile( matDB=matDB, outFile=outFile, settings=settings )
+    ret = generate__materialFile( matDB=matDB, outFile=outFile, settings=settings, keys=keys )
     return()
 
 
@@ -43,8 +47,8 @@ def generate__materialFile( outFile=None, matDB=None, keys=None, settings=None )
     # ------------------------------------------------- #
     if ( outFile  is None ): sys.exit( "[save__materialFile] outFile     == ???" )
     if ( matDB    is None ): sys.exit( "[save__materialFile] matDB   == ???" )
-    if ( keys     is None ): keys     = matDB.keys()
     if ( settings is None ): settings = default_settings
+    if ( keys     is None ): keys     = matDB.keys()
     
     # ------------------------------------------------- #
     # --- [2] make contents                         --- #
@@ -144,7 +148,7 @@ def show__section( section=None, length=71, bar_mark="-", comment_mark="#", \
 # ========================================================= #
 
 if ( __name__=="__main__" ):
-    inpFile = "test/materials__fromJSON/materialsDB.json"
+    inpFile = "test/materials__fromJSON/materials.json"
     materials__fromJSON( inpFile=inpFile )
 
 
