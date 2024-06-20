@@ -11,15 +11,15 @@ import nkUtilities.configSettings as cfs
 # ========================================================= #
 # ===  estimate__RIproduction.py                        === #
 # ========================================================= #
-def estimate__RIproduction():
+def estimate__RIproduction( paramsFile=None ):
 
     e_, pf_, xs_ =  0, 1, 1
     mb2cm2       =  1.0e-27
-    paramsFile   =  "dat/parameters.json"
     
     # ------------------------------------------------- #
     # --- [1] load parameters from file             --- #
     # ------------------------------------------------- #
+    if ( paramsFile is None ): sys.exit( "[estimate__RIproduction.py] paramsFile == ???" )
     import nkUtilities.json__formulaParser as jso
     params       = jso.json__formulaParser( inpFile=paramsFile )
     
@@ -357,4 +357,12 @@ def calculate__parameters( params=None ):
 # ===   Execution of Pragram                            === #
 # ========================================================= #
 if ( __name__=="__main__" ):
-    estimate__RIproduction()
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument( "--paramsFile", help="input file name." ) ## actual
+    args   = parser.parse_args()
+    if ( args.paramsFile is None ):
+        print( "[estimate__RIproduction.py] paramsFile == ???" )
+    paramsFile = "dat/parameters.json"
+    estimate__RIproduction( paramsFile=paramsFile )
