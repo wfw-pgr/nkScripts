@@ -57,8 +57,17 @@ def estimate__RIproduction( paramsFile=None ):
     # ------------------------------------------------- #
     # --- [6] integrate dY(E) with respect to E     --- #
     # ------------------------------------------------- #
-    if ( params["integral.method"] == "simpson" ):
-        YieldRate = itg.simpson( dYield, x=EAxis )
+    if   ( params["integral.method"] == "simpson" ):
+        YieldRate = itg.simpson  ( dYield, x=EAxis )
+    elif ( params["integral.method"] == "trapezoid" ):
+        YieldRate = itg.trapezoid( dYield, x=EAxis )
+    elif ( params["integral.method"] == "rectangular" ):
+        YieldRate = np.dot( np.diff( EAxis ), dYield[:-1] )
+    else:
+        print( "[estimate__RIproduction.py] integral.method == {} ??? "\
+               .format( params["integral.method"] ) )
+        sys.exit()
+        
     N_yield    = params["photon.beam.duration"] * 60*60.0  * YieldRate 
     A_yield    = params["product.lambda.1/s"]   * N_yield
     lam1,lam2  = params["product.lambda.1/s"], params["decayed.lambda.1/s"]
@@ -110,10 +119,18 @@ def load__photonFlux( EAxis=None, params=None ):
         import nkUtilities.retrieveData__afterStatement as ras
         pf_ret = ras.retrieveData__afterStatement( inpFile  = params["photon.filename"], \
                                                    expr_from=expr_from, expr_to=expr_to )
-        e_avg  =  0.5 * ( pf_ret[:,el_] + pf_ret[:,eu_] )
-        p_nrm  = np.copy( pf_ret[:,pf_] ) / params["photon.beam.current.sim"]
+        if   ( params["photon.bin2point.convert"] == "center" ):
+            e_avg  =  0.5 * ( pf_ret[:,el_] + pf_ret[:,eu_] )
+            p_nrm  = np.copy( pf_ret[:,pf_] ) / params["photon.beam.current.sim"]
+        elif ( params["photon.bin2point.convert"] == "edge"   ):
+            e_avg  = np.insert( pf_ret[:,el_], pf_ret.shape[0], pf_ret[-1,eu_] )
+            p_nrm  = ( 0.5 * ( pf_ret[:,pf_] + np.roll( pf_ret[:,pf_], +1 ) ) )[1:]
+            p_nrm  = np.insert( p_nrm, [ 0, p_nrm.shape[0] ], [ pf_ret[0,pf_], pf_ret[-1,pf_] ] )
+            p_nrm  = p_nrm / params["photon.beam.current.sim"]
+        else:
+            print( "[estimate__RIproduction.py] unknown photon.bin2point.convert [ERROR] " )
         pf_raw = np.concatenate( [ e_avg[:,np.newaxis], p_nrm[:,np.newaxis] ], axis=1 )
-
+        
     # ------------------------------------------------- #
     # --- [2] fit photon flux                       --- #
     # ------------------------------------------------- #
@@ -134,13 +151,22 @@ def fit__forRIproduction( xD=None, yD=None, xI=None, mode="linear", p0=None, thr
     # --- [1] fitting                               --- #
     # ------------------------------------------------- #
     if   ( mode == "linear"   ):
-        fitFunc = itp.interp1d( xD, yD, kind="linear", fill_value="extrapolate" )
-        yI      = fitFunc( xI )
+        fitFunc   = itp.interp1d( xD, yD, kind="linear", fill_value="extrapolate" )
+        yI        = fitFunc( xI )
     elif ( mode == "gaussian" ):
         fitFunc   = lambda eng,c1,c2,c3,c4,c5 : \
             c1*np.exp( -1.0/c2*( eng-c3 )**2 ) +c4*eng +c5
         copt,cvar = opt.curve_fit( fitFunc, xD, yD, p0=p0 )
         yI        = fitFunc( xI, *copt )
+    elif ( mode == "log-poly5th" ):
+        indx      = np.where( ( xD >= np.min(xI) ) & ( xD <= np.max(xI) ) & ( yD > 0.0 ) )
+        xT, yT    = xD[ indx ], np.log10( yD[indx] )
+        xlims     = [ xT[0], xT[-1] ]
+        fitFunc   = lambda eng,c0,c1,c2,c3,c4,c5,c6 : \
+            c0 + c1*eng + c2*eng**2 + c3*eng**3 + c4*eng**4 + c5*eng**5 + c6*eng**6
+        copt,cvar = opt.curve_fit( fitFunc, xT, yT, p0=p0 )
+        yI        = np.where( ( xI >= xlims[0] ) & ( xI <= xlims[1] ), \
+                              10.0**( fitFunc( xI, *copt ) ), 0.0 )
     else:
         print( "[estimate__RIproduction.py] undefined mode :: {} ".format( mode ) )
         sys.exit()
@@ -363,6 +389,9 @@ if ( __name__=="__main__" ):
     parser.add_argument( "--paramsFile", help="input file name." ) ## actual
     args   = parser.parse_args()
     if ( args.paramsFile is None ):
-        print( "[estimate__RIproduction.py] paramsFile == ???" )
-    paramsFile = "dat/parameters.json"
-    estimate__RIproduction( paramsFile=paramsFile )
+        args.paramsFile = "dat/ri_prod.json"
+    if ( not( os.path.exists( args.paramsFile ) ) ):
+        print( "[estimate__RIproduction.py] paramsFile does not exists [ERROR]" )
+        print( "[estimate__RIproduction.py] (e.g.) python pyt/estimate__RIproduction.py --paramsFile ri_prod.json" )
+        sys.exit()
+    estimate__RIproduction( paramsFile=args.paramsFile )
