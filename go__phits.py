@@ -17,6 +17,7 @@ def go__phits():
         "phits_win":r"C:\phits\bin\phitsSend2.bat", # install path of PHITS code. ( Windows )
         "phits_lin":r"phits.sh",                    # install path of PHITS code. ( Linux, mac )
     }
+    default_materialFile = "inp/materials.json"
     
     # ------------------------------------------------- #
     # --- [1] arguments                             --- #
@@ -26,11 +27,15 @@ def go__phits():
     parser.add_argument( "--phits_win"         , help="PHITS's path in windows." )
     parser.add_argument( "--phits_lin"         , help="PHITS's path in linux."   )
     parser.add_argument( "--materialFile"         , help="materials database file." )
-    parser.add_argument( "-c", "--compile_mode", help="pre-compile input file, no execution", \
+    parser.add_argument( "-c", "--compile_mode" , help="pre-compile input file, no execution", \
+                         action="store_true" )
+    parser.add_argument( "-m", "--material_make", help="compile materialFile ( def. inp/materials.json )", \
                          action="store_true" )
     args          = parser.parse_args()
     inpFile       = args.inpFile
     materialFile  = args.materialFile
+    if ( ( material_make ) and ( materialFile is None ) ):
+        materialFile = default_materialFile
     sct.show__section( "Conversion :: _phits.inp >> .inp File", length=71 )
     
     # ------------------------------------------------- #
