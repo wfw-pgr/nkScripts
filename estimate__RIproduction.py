@@ -1,4 +1,4 @@
-import os, sys, re, json, math
+import os, sys, re, json5, math
 import numpy                      as np
 import scipy.interpolate          as itp
 import scipy.integrate            as itg
@@ -176,10 +176,15 @@ def integrate__yield( EAxis=None, dYield=None, params=None ):
     # ------------------------------------------------- #
     #  -- Taylor (linear) case :: N_yield = params["photon.beam.duration"]*60*60 * YieldRate
     #  -- Non-Linear case      :: N_yield = Y0/L [ 1 - exp( - L t ) ]  -- #
-    lambda_t  = params["product.lambda.1/s"]   * ( params["photon.beam.duration"] * 60*60.0 )
-    N_max     = YieldRate / params["product.lambda.1/s"]
-    N_yield   = N_max * ( 1.0 - np.exp( -1.0*lambda_t ) )
-    A_yield   = params["product.lambda.1/s"]   * N_yield
+    #  -- 
+    lambda_t    = params["product.lambda.1/s"] * ( params["photon.beam.duration"] * 60*60.0 )
+    saturation  = ( 1.0 - np.exp( -1.0*lambda_t ) )
+    F_saturate  = saturation  / lambda_t * 100.0
+    N_saturate  = YieldRate   / params["product.lambda.1/s"]    #  N_saturation
+    A_saturate  = N_saturate  * params["product.lambda.1/s"]    #  = YieldRate 
+    Y_product   = YieldRate   * params["product.lambda.1/s"]    #  (atoms/s) => (Bq/s)
+    N_product   = N_saturate  * saturation
+    A_product   = N_product   * params["product.lambda.1/s"]
 
     # ------------------------------------------------- #
     # --- [3] predict decay production              --- #
@@ -189,31 +194,70 @@ def integrate__yield( EAxis=None, dYield=None, params=None ):
         t_max_s   = np.log( lam1/lam2 ) / ( lam1 - lam2 )
         t_max     = halflife__unitConvert( {"value":t_max_s,"unit":"s"}, to_unit="d" )["value"]
         ratio     = ( lam2/(lam2-lam1) )*( np.exp( -lam1*t_max_s )-np.exp( -lam2*t_max_s ) )*100
-        A_decay   = ( ratio/100.0 )* A_yield
+        Y_decayed = ( ratio/100.0 )* Y_product
+        A_decayed = ( ratio/100.0 )* A_product
+        N_decayed = A_decayed / params["product.lambda.1/s"]
     else:
-        t_max, ratio, A_decay = None, None, None
+        t_max    , ratio                = None, None
+        A_decayed, Y_decayed, N_decayed = None, None, None
 
     # ------------------------------------------------- #
     # --- [4] calculate efficiency                  --- #
     # ------------------------------------------------- #
-    eta_yield_Bq, eta_decay_Bq, eta_decay_wt = None, None, None
-    charge       = params["photon.beam.current.use"] * params["photon.beam.duration"]
-    target_Bq    = params["target.activity.Bq"]
-    eta_yield_wt = A_yield / ( params["target.mass.mg"] * charge )
+    current       = params["photon.beam.current.use"]
+    charge        = params["photon.beam.current.use"] * params["photon.beam.duration"]
+    target_Bq     = params["target.activity.Bq"]
+    target_wt     = params["target.mass.mg"]
+
+    # --------------------------------------- #
+    # -- [4-1] product :: Bq / ( mg uA h ) -- #
+    # --------------------------------------- #
+    An_product_wt = A_product / ( target_wt * charge  )
+    Yn_product_wt = Y_product / ( target_wt * current )
+
+    # --------------------------------------- #
+    # -- [4-2] product :: Bq / ( Bq uA h ) -- #
+    # --------------------------------------- #
     if ( ( target_Bq is not None ) ):
-        eta_yield_Bq = A_yield / ( target_Bq * charge )
-    if ( ( target_Bq is not None ) and ( A_decay is not None ) ):
-        eta_decay_Bq = A_decay / ( target_Bq * charge )
-    if (                               ( A_decay is not None ) ):
-        eta_decay_wt = A_decay / ( params["target.mass.mg"] * charge )
+        An_product_Bq  = A_product / ( target_Bq * charge  )   # ( Bq /( Bq uA h ) )
+        Yn_product_Bq  = Y_product / ( target_Bq * current )   # ( Bq /( Bq uA s ) )
+    else:
+        An_product_Bq  = None
+        Yn_product_Bq  = None
+        
+    # --------------------------------------- #
+    # -- [4-3] decayed :: Bq / ( Bq uA h ) -- #
+    # --------------------------------------- #
+    if ( ( target_Bq is not None ) and ( A_decayed is not None ) ):
+        An_decayed_Bq  = A_decayed / ( target_Bq * charge  )   # ( Bq /( Bq uA h ) )
+        Yn_decayed_Bq  = Y_decayed / ( target_Bq * current )   # ( Bq /( Bq uA s ) )
+    else:
+        An_decayed_Bq  = None
+        Yn_decayed_Bq  = None
+        
+    # --------------------------------------- #
+    # -- [4-4] decayed :: Bq / ( mg uA h ) -- #
+    # --------------------------------------- #
+    if (                               ( A_decayed is not None ) ):
+        An_decayed_wt  = A_decayed / ( target_wt * charge  )   # ( Bq / (mg uA s ) )
+        Yn_decayed_wt  = Y_decayed / ( target_wt * current )   # ( Bq / (mg uA s ) )
+    else:
+        An_decayed_wt  = None
+        Yn_decayed_wt  = None
 
     # ------------------------------------------------- #
     # --- [5] return results                        --- #
     # ------------------------------------------------- #
-    results   = { "YieldRate":YieldRate, "N_yield":N_yield, "A_yield":A_yield, \
-                  "t_max":t_max, "ratio":ratio, "A_decay":A_decay, \
-                  "eta_yield_Bq":eta_yield_Bq, "eta_yield_wt":eta_yield_wt, \
-                  "eta_decay_Bq":eta_decay_Bq, "eta_decay_wt":eta_decay_wt, }
+    results   = { "YieldRate":YieldRate         , \
+                  "Y_product":Y_product         , "A_product":A_product, "N_product":N_product,
+                  "Y_decayed":Y_decayed         , "A_decayed":A_decayed, "N_decayed":N_decayed,
+                  "N_saturate":N_saturate       , "A_saturate":A_saturate, \
+                  "Yn_product_Bq":Yn_product_Bq , "Yn_product_wt":Yn_product_wt, \
+                  "An_product_Bq":An_product_Bq , "An_product_wt":An_product_wt, \
+                  "Yn_decayed_Bq":Yn_decayed_Bq , "Yn_decayed_wt":Yn_decayed_wt, \
+                  "An_decayed_Bq":An_decayed_Bq , "An_decayed_wt":An_decayed_wt, \
+                  "lambda_t":lambda_t, "saturation":saturation, "F_saturate":F_saturate, \
+                  "t_max":t_max, "ratio":ratio, }
     return( results )
 
     
@@ -334,19 +378,35 @@ def write__results( Data=None, params=None, stdout="minimum" ):
     if ( Data is None ): sys.exit( "[estimate__RIproduction.py] Data == ???" )
     text1        = "[paramters]\n"
     text2        = "[results]\n"
-    keysdict     = { "product": [ "YieldRate", "N_yield", "A_yield", \
-                                  "eta_yield_wt", "eta_yield_Bq" ],\
-                     "decayed": [ "t_max",   "ratio", "A_decay", \
-                                  "eta_decay_wt", "eta_decay_Bq" ]
+    keysdict     = { "product" : [ "YieldRate"     ,
+                                   "Y_product"     , "A_product"    , "N_product", \
+                                   "An_product_wt" , "Yn_product_wt", \
+                                   "An_product_Bq" , "Yn_product_Bq", \
+                                   "N_saturate"    , "A_saturate"   , ],\
+                     "decayed" : [ "t_max"         , "ratio", \
+                                   "Y_decayed"     , "A_decayed"    , "N_decayed",  \
+                                   "An_decayed_wt" , "Yn_decayed_wt", \
+                                   "An_decayed_Bq" , "Yn_decayed_Bq", ],\
+                     "saturate": [ "F_saturate"    , "lambda_t"     , "saturation", \
+                                   "N_saturate"    , "A_saturate",  ], \
     }
-    titlesFormat = "\n"+" "*3+"-"*25+" "*3 + "{}" + " "*3+"-"*25+" "*3 + "\n\n"
-    paramsFormat = "{0:>30} :: {1}\n"
-    resultFormat = "{0:>30} :: {1:15.8e}   {2}\n"
-    none__Format = "{0:>30} :: {1:}   {2}\n"
-    resultUnits  = { "YieldRate":"(atoms/s)", "N_yield":"(atoms)", "A_yield":"(Bq)", \
-                     "t_max":"(d)", "ratio":"(%)", "A_decay":"(Bq)", \
-                     "eta_yield_wt":"(Bq/(mg uA h))", "eta_decay_wt":"(Bq/(mg uA h))", \
-                     "eta_yield_Bq":"(Bq/(Bq uA h))", "eta_decay_Bq":"(Bq/(Bq uA h))" }
+    titlesFormat = "\n"+ " "*3+"-"*25+" "*3 + "{}" + " "*3+"-"*25+" "*3 + "\n\n"
+    paramsFormat = "{0:>30} : {1} \n"
+    resultFormat = "{0:>30} : {1:15.8e}     {2}\n"
+    none__Format = "{0:>30} : {1:>15}     {2}\n"
+    resultUnits  = { "YieldRate"     :"(atoms/s)"      , \
+                     "Y_product"     :"(Bq/s)"         , "Y_decayed"     :"(Bq/s)", \
+                     "A_product"     :"(Bq)"           , "A_decayed"     :"(Bq)",\
+                     "N_product"     :"(atoms)"        , "N_decayed"     :"(atoms)",\
+                     "An_product_wt" :"(Bq/(mg uA h))" , "An_decayed_wt" :"(Bq/(mg uA h))" , \
+                     "Yn_product_wt" :"(Bq/(mg uA s))" , "Yn_decayed_wt" :"(Bq/(mg uA s))" , \
+                     "An_product_Bq" :"(Bq/(Bq uA h))" , "An_decayed_Bq" :"(Bq/(Bq uA h))" , \
+                     "Yn_product_Bq" :"(Bq/(Bq uA s))" , "Yn_decayed_Bq" :"(Bq/(Bq uA s))" , \
+                     "N_saturate"    :"(atoms)"        , "A_saturate"    :"(Bq)", \
+                     "t_max"         :"(d)"            , "ratio"         :"(%)" , \
+                     "F_saturate"    :"(%)"            , "lambda_t"      :"(a.u.)", \
+                     "saturation"    :"(a.u.)"         , \
+    }
     
     # ------------------------------------------------- #
     # --- [1] pack texts                            --- #
@@ -354,16 +414,16 @@ def write__results( Data=None, params=None, stdout="minimum" ):
     results = Data["results"]
     for key,val in Data["params"].items():
         text1 += paramsFormat.format( key, val )
-
+            
     for label in keysdict.keys():
         text2 += titlesFormat.format( "[ {} ]".format( label.center(10) ) )
         for key in keysdict[label]:
             if ( results[key] is not None ):
                 text2 += resultFormat.format( key, results[key], resultUnits[key] )
             else:
-                text2 += none__Format.format( key, results[key], resultUnits[key] )
+                text2 += none__Format.format( key, "null"      , resultUnits[key] )
     text2 += "\n" + " "*3 + "-"*70 + "\n"
-    texts  = text1 + text2 + "\n"
+    texts  = "\n" + text1 + text2 + "\n" + "\n"
     
     # ------------------------------------------------- #
     # --- [2] save and print texts                  --- #
@@ -386,10 +446,19 @@ def write__results( Data=None, params=None, stdout="minimum" ):
         Data_ = np.concatenate( Data_, axis=1 )
         names = [ "energy(MeV)", "dYield(atoms/MeV/s)", \
                   "photonFlux(photons/MeV/uA/s)", "crossSection(mb)" ]
-        spf.save__pointFile( outFile=params["results.yieldFile"], Data=Data_, silent=True )
+        spf.save__pointFile( outFile=params["results.yieldFile"], Data=Data_, names=names, silent=True )
         print( "[estimate__RIproduction.py] yield data is saved in {}"\
                .format( params["results.yieldFile"] ) )
 
+    # ------------------------------------------------- #
+    # --- [3] dump to json                          --- #
+    # ------------------------------------------------- #
+    if ( params["results.jsonFile"] is not None ):
+        packed   = { **params, **results }
+        with open( params["results.jsonFile"], "w" ) as f:
+            json5.dump( packed, f, indent=4, \
+                        sort_keys=False, separators=(',', ': ') )
+    
     
 # ========================================================= #
 # ===  convert halflife's unit in seconds               === #
@@ -411,6 +480,7 @@ def calculate__parameters( params=None ):
     N_Avogadro   = 6.02e23
     mm2cm        = 0.1
     mg2g         = 1.0e-3
+    g2mg         = 1.0e+3
     
     # ------------------------------------------------- #
     # --- [1] arguments                             --- #
@@ -447,27 +517,36 @@ def calculate__parameters( params=None ):
     # --- [4] thickness x atom density              --- #
     # ------------------------------------------------- #
     params["target.atoms/cm3"] = N_Avogadro*( params["target.g/cm3"] / params["target.g/mol"] )
-    if   ( params["target.thick.type"].lower() == "bq" ):
-        N_atoms                     = params["target.activity.Bq"] / params["target.lambda.1/s"]
-        V_target                    = N_atoms  / params["target.atoms/cm3"]
-        params["target.thick.cm"]   = V_target / params["target.area.cm2"]
-        params["target.tN_product"] = params["target.atoms/cm3"]*params["target.thick.cm"]
+    if   ( params["target.thick.type"].lower() == "bq" ): 
+        params["target.atoms"]      = params["target.activity.Bq"] / params["target.lambda.1/s"]
+        params["target.volume.cm3"] = params["target.atoms"]       / params["target.atoms/cm3"]
+        params["target.thick.cm"]   = params["target.volume.cm3"]  / params["target.area.cm2"]
+        params["target.tN_product"] = params["target.atoms/cm3"]   * params["target.thick.cm"]
+        # -- just ref. -- #
+        params["target.mass.mg"]    = params["target.g/cm3"] * params["target.volume.cm3"] * g2mg
         
     elif ( params["target.thick.type"].lower() == "direct" ):
         params["target.thick.cm"]   = params["target.thick.direct.mm"] * mm2cm
-        params["target.tN_product"] = params["target.atoms/cm3"]*params["target.thick.cm"]
+        params["target.tN_product"] = params["target.atoms/cm3"]   * params["target.thick.cm"]
+        # -- just ref. -- #
+        params["target.volume.cm3"] = params["target.thick.cm"]    * params["target.area.cm2"]
+        params["target.atoms"]      = params["target.atoms/cm3"]   * params["target.volume.cm3"]
+        params["target.mass.mg"]    = params["target.g/cm3"] * params["target.volume.cm3"] * g2mg
         
     elif ( params["target.thick.type"].lower() == "fluence-bq" ):
-        N_atoms                     = params["target.activity.Bq"]/params["target.lambda.1/s"]
-        V_target                    = N_atoms  / params["target.atoms/cm3"]
-        params["target.thick.cm"]   = V_target / params["target.area.cm2"]
         params["target.tN_product"] = params["target.atoms/cm3"]
-        params["target.mass.mg"]    = 1.0
+        # -- just ref. -- #
+        params["target.atoms"]      = params["target.activity.Bq"] / params["target.lambda.1/s"]
+        params["target.volume.cm3"] = params["target.atoms"]       / params["target.atoms/cm3"]
+        params["target.thick.cm"]   = params["target.volume.cm3"]  / params["target.area.cm2"]
+        params["target.mass.mg"]    = params["target.g/cm3"] * params["target.volume.cm3"] * g2mg
         
     elif ( params["target.thick.type"].lower() == "fluence-mass" ):
-        V_target                    = ( params["target.mass.mg"]*mg2g ) / params["target.g/cm3"]
-        params["target.thick.cm"]   = V_target / (params["target.area.cm2"])
         params["target.tN_product"] = params["target.atoms/cm3"]
+        # -- just ref. -- #
+        params["target.volume.cm3"] = ( params["target.mass.mg"]*mg2g ) / params["target.g/cm3"]
+        params["target.thick.cm"]   = params["target.volume.cm3"]  / (params["target.area.cm2"])
+        params["target.atoms"]      = N_Avogadro*( (params["target.mass.mg"]*mg2g) / params["target.g/mol"] )
         #
         # thick t is included in :: photonFlux profile :: 
         # fluence = count/m2 = count*m/m3,   =>   fluence * volume = count*m

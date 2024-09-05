@@ -1,0 +1,166 @@
+{
+
+    // ---------------------------------------------------------- //
+    // -- general settings                                     -- //
+    // ---------------------------------------------------------- //
+    "general.xsdir"        : "xs/",                   // dir name for glob search
+    "general.basename"     : "xs__*.dat",             // basename for glob search
+    "general.pngFile"      : "png/xsections_Ra226_gn_Ra225.png",     // output png file name
+    // "general.pngFile"      : "png/xsections_Au197_gn_Au196.png",     // output png file name
+    "general.fileMode"     : "json",                  // [ "glob", "json" ]
+
+    // -- Ra-226 (g,n) Ra-225 set -- //
+    "general.usekeys"      : [ "xs.Ra.01", "xs.Ra.02", "xs.Ra.03", "xs.Ra.04",
+    			       "xs.Ra.05", "xs.Ra.06", "xs.Ra.07", "xs.Ra.08" ],
+    // -- Au-197 (g,n) Au-196 set -- //
+    // "general.usekeys"      : [ "xs.Au.01", "xs.Au.02", "xs.Au.03", "xs.Au.04",
+    // 			       "xs.Au.05", "xs.Au.06", "xs.Au.07", "xs.Au.08" ],
+    // -- Au-197 (g,n) Au-196 (TENDL2023) compare set -- //
+    // "general.usekeys"      : [ "xs.Au.03", "xs.Au.04", "xs.Au.09", "xs.Au.10",
+    // 			       "xs.Au.11", "xs.Au.12" ],
+    // -- Au-197 (g,n) Au-196 (TENDL2021) compare set -- //
+    // "general.usekeys"      : [ "xs.Au.03", "xs.Au.05", "xs.Au.13", "xs.Au.14",
+    // 			       "xs.Au.15", "xs.Au.16" ],
+    //
+    // if null, use all xs. keys
+
+    // ---------------------------------------------------------- //
+    // -- plot settings                                        -- //
+    // ---------------------------------------------------------- //
+    "plot.xAutoRange"      : false,
+    "plot.yAutoRange"      : false,
+    "plot.xRange"          : [ 0.0, 20.0   ],         
+    "plot.yRange"          : [ 0.0, 1000.0 ],
+    "plot.legend.fontsize" : 8,
+    
+    // ---------------------------------------------------------- //
+    // -- Au-197 (g,x) Au-196                                  -- //
+    // ---------------------------------------------------------- //
+    "xs.Au.01":{
+	"filename" : "xs/xs__JENDL5_Au197_gn_Au196_gs.dat",
+	"label"    : "Au197 (X,n) Au196 [JENDL5] (gs)",
+	"source"   : "JENDL5", 
+    }, 
+    "xs.Au.02":{
+	"filename" : "xs/xs__JENDL5_Au197_gn_Au196_m1.dat",
+	"label"    : "Au197 (X,n) Au196 [JENDL5] (m1)",
+	"source"   : "JENDL5", 
+    },
+    "xs.Au.03":{
+	"filename" : "xs/xs__JENDL5_Au197_gn_Au196_sum.dat",
+	"label"    : "Au197 (X,n) Au196 [JENDL5] (gs+m1)",
+	"source"   : "JENDL5", 
+    },
+    "xs.Au.04":{
+	"filename" : "xs/xs__TENDL2023_Au197_gn_Au196.dat",
+	"label"    : "Au197 (X,n) Au196 [TENDL2023]",
+	"source"   : "TENDL2023", 
+    }, 
+    "xs.Au.05":{
+	"filename" : "xs/xs__TENDL2021_Au197_gn_Au196.dat",
+	"label"    : "Au197 (X,n) Au196 [TENDL2021]",
+	"source"   : "TENDL2021", 
+    },
+    "xs.Au.06":{
+	"filename" : "xs/xs__TENDL2019_Au197_gn_Au196.dat",
+	"label"    : "Au197 (X,n) Au196 [TENDL2019]",
+	"source"   : "TENDL2019", 
+    },
+    "xs.Au.07":{
+	"filename" : "xs/xs__TENDL2017_Au197_gn_Au196.dat",
+	"label"    : "Au197 (X,n) Au196 [TENDL2017]",
+	"source"   : "TENDL2017", 
+    },
+    "xs.Au.08":{
+	"filename" : "xs/xs__TENDL2015_Au197_gn_Au196.dat",
+	"label"    : "Au197 (X,n) Au196 [TENDL2015]",
+	"source"   : "TENDL2015", 
+    },
+    "xs.Au.09":{
+	"filename" : "xs/xs__TENDL2023_Au197_gn_Au196_g.dat",
+	"label"    : "Au197 (X,n) Au196 [TENDL2023] (g)",
+	"source"   : "TENDL2023", 
+    }, 
+    "xs.Au.10":{
+	"filename" : "xs/xs__TENDL2023_Au197_gn_Au196_level03.dat",
+	"label"    : "Au197 (X,n) Au196 [TENDL2023] (level03)",
+	"source"   : "TENDL2023", 
+    }, 
+    "xs.Au.11":{
+	"filename" : "xs/xs__TENDL2023_Au197_gn_Au196_level54.dat",
+	"label"    : "Au197 (X,n) Au196 [TENDL2023] (level54)",
+	"source"   : "TENDL2023", 
+    }, 
+    "xs.Au.12":{
+	"filename" : "xs/xs__TENDL2023_Au197_gn_Au196_g_lv03_lv54_sum.dat",
+	"label"    : "Au197 (X,n) Au196 [TENDL2023] (g+lv.03+lv.54)",
+	"source"   : "TENDL2023", 
+    },
+    "xs.Au.13":{
+	"filename" : "xs/xs__TENDL2021_Au197_gn_Au196_g.dat",
+	"label"    : "Au197 (X,n) Au196 [TENDL2021] (g)",
+	"source"   : "TENDL2021", 
+    }, 
+    "xs.Au.14":{
+	"filename" : "xs/xs__TENDL2021_Au197_gn_Au196_o1.dat",
+	"label"    : "Au197 (X,n) Au196 [TENDL2021] (o1)",
+	"source"   : "TENDL2021", 
+    }, 
+    "xs.Au.15":{
+	"filename" : "xs/xs__TENDL2021_Au197_gn_Au196_o2.dat",
+	"label"    : "Au197 (X,n) Au196 [TENDL2021] (o2)",
+	"source"   : "TENDL2021", 
+    }, 
+    "xs.Au.16":{
+	"filename" : "xs/xs__TENDL2021_Au197_gn_Au196_o3.dat",
+	"label"    : "Au197 (X,n) Au196 [TENDL2021] (o3)",
+	"source"   : "TENDL2021", 
+    }, 
+    
+    
+
+    // ---------------------------------------------------------- //
+    // -- Ra-226 (g,x) Ra-225                                  -- //
+    // ---------------------------------------------------------- //
+    "xs.Ra.01":{
+	"filename" : "xs/xs__TENDL2023_Ra226_gn_Ra225.dat",
+	"label"    : "Ra226 (X,n) Ra225 [TENDL2023]",
+	"source"   : "TENDL2023", 
+    }, 
+    "xs.Ra.02":{
+	"filename" : "xs/xs__TENDL2021_Ra226_gn_Ra225.dat",
+	"label"    : "Ra226 (X,n) Ra225 [TENDL2021]",
+	"source"   : "TENDL2021", 
+    }, 
+    "xs.Ra.03":{
+	"filename" : "xs/xs__TENDL2019_Ra226_gn_Ra225.dat",
+	"label"    : "Ra226 (X,n) Ra225 [TENDL2019]",
+	"source"   : "TENDL2019", 
+    }, 
+    "xs.Ra.04":{
+	"filename" : "xs/xs__TENDL2017_Ra226_gn_Ra225.dat",
+	"label"    : "Ra226 (X,n) Ra225 [TENDL2017]",
+	"source"   : "TENDL2017", 
+    }, 
+    "xs.Ra.05":{
+	"filename" : "xs/xs__TENDL2015_Ra226_gn_Ra225.dat",
+	"label"    : "Ra226 (X,n) Ra225 [TENDL2015]",
+	"source"   : "TENDL2015", 
+    }, 
+    "xs.Ra.06":{
+	"filename" : "xs/xs__TENDL2021_Ra226_gn_Ra225_o.dat",
+	"label"    : "Ra226 (X,n) Ra225 [TENDL2021] (o)",
+	"source"   : "TENDL2021", 
+    }, 
+    "xs.Ra.07":{
+	"filename" : "xs/xs__TENDL2019_Ra226_gn_Ra225_o.dat",
+	"label"    : "Ra226 (X,n) Ra225 [TENDL2019] (o)",
+	"source"   : "TENDL2019", 
+    }, 
+    "xs.Ra.08":{
+	"filename" : "xs/xs__TENDL2017_Ra226_gn_Ra225_o.dat",
+	"label"    : "Ra226 (X,n) Ra225 [TENDL2017] (o)",
+	"source"   : "TENDL2017", 
+    }, 
+
+}
