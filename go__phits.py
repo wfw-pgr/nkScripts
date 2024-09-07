@@ -34,7 +34,7 @@ def go__phits():
     args          = parser.parse_args()
     inpFile       = args.inpFile
     materialFile  = args.materialFile
-    if ( ( material_make ) and ( materialFile is None ) ):
+    if ( ( args.material_make ) and ( materialFile is None ) ):
         materialFile = default_materialFile
     sct.show__section( "Conversion :: _phits.inp >> .inp File", length=71 )
     

@@ -1,0 +1,89 @@
+{
+
+    // ------------------------------------------------- //
+    // --- [1] General settings                      --- //
+    // ------------------------------------------------- //
+    "series"                 :[ "beamON.01", "beamOFF.01", "separation.01", "separation.02" ],
+    "series.time.unit"       :"d",           // [ "y", "d", "h", "m", "s" ]
+    "A0.init"                :0.0,           // (Bq)
+    "B0.init"                :0.0,      
+    "tHalf.A"                :[ 14.9, "d" ], // [ value, unit ]
+    "tHalf.B"                :[  9.9, "d" ], 
+
+    "result.outFile"         : "dat/result_20240901.dat", 
+
+    
+    // ------------------------------------------------- //
+    // --- [2] Yield rate                            --- //
+    // ------------------------------------------------- //
+
+    "Y.efficiency.type"      : "Yn_product_bq",
+    "Y.efficiency.value"     : 1.38e-8,
+    // ---------------------------------------------------------------- //
+    //  [ "Yieldrate" (atoms/s), "Y_product", "Y_decayed" (Bq/s),
+    //    "Yn_product_wt", "Yn_decayed_wt" (Bq/mg/uA/s),
+    //    "Yn_product_bq", "Yn_decayed_Bq" (Bq/mg/uA/s) ]
+    // ---------------------------------------------------------------- //
+
+    "Y.normalize"            : true,
+    "Y.normalize.mg"         : null,         // (mg)
+    "Y.normalize.Bq"         : 200e6,        // (Bq)
+    "Y.normalize.uA"         : 200.0,        // (uA)
+    "Y.ratio.B/A"            : 0.445,        // if decayed, efficiency x A/B 
+
+
+    // ------------------------------------------------- //
+    // --- [3] time series settings                  --- //
+    // ------------------------------------------------- //
+    
+    "beamON.01"       : {
+	"dt"          : [ 100.0, "h" ], // [ time, unit ]  
+	"beam.relint" : 1.0,            // relative Yield rate: Y  ==>  beam on/off = ( 1/0 )
+	"nPoints"     : 31,             // number of data samplings
+	"separation"  : false, 
+    },
+    "beamOFF.01"      : {
+	"dt"          : [ 17.4, "d" ],  
+	"beam.relint" : 0.0,
+	"nPoints"     : 151,
+	"separation"  : false, 
+    }, 
+    "separation.01"   : {
+	"dt"          : [ 17.4, "d" ],  
+	"beam.relint" : 0.0,
+	"nPoints"     : 175,
+	"separation"  : true, 
+    }, 
+    "separation.02"   : {
+	"dt"          : [ 17.4, "d" ],  
+	"beam.relint" : 0.0,
+	"nPoints"     : 175,
+	"separation"  : true, 
+    },
+
+    
+    // ------------------------------------------------- //
+    // --- [4] figure settings                       --- //
+    // ------------------------------------------------- //
+    "figure.xAutoRange"      :false,
+    "figure.yAutoRange"      :false,
+    
+    "figure.num.pngFile"     :"png/time_vs_atoms.png",
+    "figure.num.y.normalize" : 1.0,
+    "figure.num.xMinMaxNum"  :[ 0.0,   50.0,  6 ],
+    "figure.num.yMinMaxNum"  :[ 0.0, 5.0e14,  6 ],
+    "figure.num.xTitle"      :"Time (d)", 
+    "figure.num.yTitle"      :"Number of Atoms", 
+    "figure.num.label.A"     :"$N_{Ra225}$", 
+    "figure.num.label.B"     :"$N_{Ac225}$", 
+
+    "figure.act.pngFile"     :"png/time_vs_activity.png",
+    "figure.act.y.normalize" : 1.0e6, 
+    "figure.act.xMinMaxNum"  :[ 0.0,  50.0, 6 ],
+    "figure.act.yMinMaxNum"  :[ 0.0, 200.0, 11 ],
+    "figure.act.xTitle"      :"Time (d)", 
+    "figure.act.yTitle"      :"Activity (MBq)", 
+    "figure.act.label.A"     :"$A_{Ra225}$",
+    "figure.act.label.B"     :"$A_{Ac225}$",
+    
+}
