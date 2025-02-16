@@ -1,6 +1,6 @@
 import os, sys, json5, re
 import numpy                      as np
-import nkUtilities.plot1D         as pl1
+import nkUtilities.gplot1D        as gpl
 import nkUtilities.load__config   as lcf
 import nkUtilities.configSettings as cfs
 
@@ -22,7 +22,7 @@ def acquire__irradiatedAmount( A0=0.0, tH_A=None, Y0=0.0, t0=0.0, t1=0.0, unit=N
 
     ld_A = convert__tHalf2lambda( tH=tH_A[time_], unit=tH_A[unit_] )
     conv = exchange__timeUnit   ( time=1., unit=unit, direction="convert" )
-        
+    
     # ------------------------------------------------- #
     # --- [2] calculate time evolution              --- #
     # ------------------------------------------------- #
@@ -100,12 +100,17 @@ def convert__tHalf2lambda( tH=0.0, unit=None ):
 # ========================================================= #
 
 def acquire__timeSeries( settingFile=None ):
+
+    settings_base = { "series.iterate":1,
+                      "refill.regular":False,
+                      "refill.regular.interval":1, "refill.regular.factor":1.0 }
     
     # ------------------------------------------------- #
     # --- [1] load config                           --- #
     # ------------------------------------------------- #
     with open( settingFile, "r" ) as f:
         settings = json5.load( f )
+    settings = { **settings_base, **settings }
         
     # ------------------------------------------------- #
     # --- [2] iterate according to beam schedule    --- #
@@ -136,7 +141,7 @@ def acquire__timeSeries( settingFile=None ):
     if ( Ytype in [ "y_decayed", "yn_decayed_wt", "yn_decayed_bq" ] ):
         Y0 = Y0 / ( settings["Y.ratio.B/A"] )
 
-    # -- if not YieldRate, ( Bq/s )  =>   ( atoms/s )    -- #
+    # -- if not YieldRate (atoms/s), then ( Bq/s )  =>   ( atoms/s )    -- #
     if ( Ytype in [ "y_product", "yn_product_wt", "yn_product_bq",
                     "y_decayed", "yn_decayed_wt", "yn_decayed_bq" ] ):
         Y0 = Y0 / ( ld_A )
@@ -147,27 +152,49 @@ def acquire__timeSeries( settingFile=None ):
     stack      = []
     obtained   = 0.0
     t0h, t1h   = 0.0, 0.0
+    remaining  = 1.0
     tinv       = exchange__timeUnit( time=1., unit=tunit, direction="invert" )
-    for ik,key in enumerate( settings["series"] ):
+    sched_base = { "dt"                : [ 1.0, "s" ],
+                   "beam.relint"       :   0.0,
+                   "nPoints"           :     1,
+                   "separation"        : False,
+                   "separation.timing" : "end",
+                   "separation.reserve":  True,
+                   "refill"            : False,
+                   "refill.timing"     : "end",
+                   "refill.factor"     :   1.0,
+    }
+    series     = settings["series"] * settings["series.iterate"]
+    if ( "series.preprocess" in settings ):
+        series = settings["series.preprocess"] + series 
+
+    nRefill    = len( settings["series"] ) * settings["refill.regular.interval"]
+    for ik,key in enumerate( series ):
         
         # ------------------------------------------------- #
         # --- [4-1] preparation                         --- #
         # ------------------------------------------------- #
-        sched  = settings[key]
+        sched  = { **sched_base, **settings[key] }
         dt     = tinv * exchange__timeUnit( time=sched["dt"][time_], \
                                             unit=sched["dt"][unit_] )  # (?) -> (s) -> (tunit)
         t0h    = t1h          # (tunit)
         t1h    = t1h + dt     # (tunit)
-        Y0h    = sched["beam.relint"] * Y0
+        Y0h    = sched["beam.relint"] * Y0 * remaining
         
         # ------------------------------------------------- #
-        # --- [4-2] separation ( milking : [B]->0.0 )   --- #
+        # --- [4-2] separation ( [B] -> 0.0 )           --- #
         # ------------------------------------------------- #
-        if ( "separation" in sched ):
-            if ( sched["separation"] ):
-                obtained += B0_loc
+        if ( sched["separation"] ):
+            if ( sched["separation.timing"].lower() == "beggining" ):
+                if ( sched["separation.reserve"] ):
+                    obtained += ld_B * B0_loc_
                 B0_loc    = 0.0
-
+                remaining = remaining * settings["Y.recycle.factor"]
+        #  -- refill -- # 
+        if ( sched["refill"] ):
+            if ( sched["refill.timing"].lower() == "beggining" ):
+                remaining = sched["refill.factor"]
+                
         # ------------------------------------------------- #
         # --- [4-3] update [A]                          --- #
         # ------------------------------------------------- #
@@ -179,17 +206,42 @@ def acquire__timeSeries( settingFile=None ):
         # ------------------------------------------------- #
         B0_loc_, func_B = acquire__decayedAmount( A0=A0_loc, B0=B0_loc, tH_A=tH_A, tH_B=tH_B,\
                                                   unit=tunit, Y0=Y0h, t0=t0h, t1=t1h )
-        
+
         # ------------------------------------------------- #
-        # --- [4-5] Data sampling                       --- #
+        # --- [4-5] separation ( [B] -> 0.0 )           --- #
+        # ------------------------------------------------- #
+        if ( sched["separation"] ):
+            if ( sched["separation.timing"].lower() == "end" ):
+                if ( sched["separation.reserve"] ):
+                    obtained += ld_B * B0_loc_
+                B0_loc_   = 0.0
+                remaining = remaining * settings["Y.recycle.factor"]
+        #  -- refill -- # 
+        if ( sched["refill"] ):
+            if ( sched["refill.timing"].lower() == "end" ):
+                remaining = sched["refill.factor"]
+
+        # ------------------------------------------------- #
+        # --- [4-6] regular refill                      --- #
+        # ------------------------------------------------- #
+        if ( settings["refill.regular"] ):
+            if ( ( (ik+1) % nRefill ) == 0 ):
+                remaining = settings["refill.regular.factor"]
+        
+                
+        # ------------------------------------------------- #
+        # --- [4-7] Data sampling                       --- #
         # ------------------------------------------------- #
         t_loc          = np.linspace( t0h, t1h, sched["nPoints"] )
         Anum, Bnum     = func_A( t_loc ), func_B( t_loc )
         Aact, Bact     = ld_A*Anum, ld_B*Bnum
+        Bcum           = np.repeat(                             obtained, sched["nPoints"] )
+        tgtE           = np.repeat( remaining*settings["Y.normalize.Bq"], sched["nPoints"] )
         A0_loc, B0_loc = A0_loc_, B0_loc_
         stack         += [ np.concatenate( [ t_loc[:,np.newaxis], \
-                                             Anum [:,np.newaxis], Bnum[:,np.newaxis],
-                                             Aact [:,np.newaxis], Bact[:,np.newaxis]], axis=1) ]
+                                             Anum [:,np.newaxis], Bnum[:,np.newaxis],\
+                                             Aact [:,np.newaxis], Bact[:,np.newaxis],\
+                                             Bcum [:,np.newaxis], tgtE[:,np.newaxis] ], axis=1) ]
         
     # ------------------------------------------------- #
     # --- [5] concatenate data                      --- #
@@ -201,7 +253,7 @@ def acquire__timeSeries( settingFile=None ):
     # ------------------------------------------------- #
     if ( settings["result.outFile"] is not None ):
         import nkUtilities.save__pointFile as spf
-        names = [ "time", "Anum", "Bnum", "Aact", "Bact" ]
+        names = [ "time", "Anum", "Bnum", "Aact", "Bact", "Bcum", "inventory" ]
         spf.save__pointFile( outFile=settings["result.outFile"], Data=tEvo, names=names )
     return( tEvo )
 
@@ -212,8 +264,8 @@ def acquire__timeSeries( settingFile=None ):
 
 def draw__figure( Data=None, settings=None, settingFile=None ):
 
-    t_, NA_, NB_, AA_, AB_ = 0, 1, 2, 3, 4
-    min_, max_, num_       = 0, 1, 2
+    t_, NA_, NB_, AA_, AB_, CB_, RM_ = 0, 1, 2, 3, 4, 5, 6
+    min_, max_, num_                 = 0, 1, 2
 
     if ( settings is None ):
         if ( settingFile is None ):
@@ -223,62 +275,49 @@ def draw__figure( Data=None, settings=None, settingFile=None ):
                 settings = json5.load( f )
     
     # ------------------------------------------------- #
-    # --- [1] Data                                  --- #
-    # ------------------------------------------------- #
-    config                   = lcf.load__config()
-    config                   = cfs.configSettings( configType="plot.def", config=config )
-    config["FigSize"]        = (4.5,4.5)
-    config["plt_position"]   = [ 0.16, 0.16, 0.94, 0.94 ]
-    config["plt_xAutoRange"] = settings["figure.xAutoRange"]
-    config["plt_yAutoRange"] = settings["figure.yAutoRange"]
-    config["xMajor_Nticks"]  =  6
-    config["yMajor_Nticks"]  = 11
-    config["plt_marker"]     = "none"
-    config["plt_markersize"] = 0.0
-    config["plt_linestyle"]  = "-"
-    config["plt_linewidth"]  = 1.6
-
-    # ------------------------------------------------- #
     # --- [3] plot ( Number of Atoms )              --- #
     # ------------------------------------------------- #
-    config["xTitle"]         =   settings["figure.num.xTitle"]
-    config["yTitle"]         =   settings["figure.num.yTitle"]
-    config["plt_xRange"]     = [ settings["figure.num.xMinMaxNum"][min_],
-                                 settings["figure.num.xMinMaxNum"][max_] ]
-    config["plt_yRange"]     = [ settings["figure.num.yMinMaxNum"][min_],
-                                 settings["figure.num.yMinMaxNum"][max_] ]
-    config["xMajor_Nticks"]  =   settings["figure.num.xMinMaxNum"][num_]
-    config["yMajor_Nticks"]  =   settings["figure.num.yMinMaxNum"][num_]
-    fig     = pl1.plot1D( config=config, pngFile=settings["figure.num.pngFile"] )
-    fig.add__plot( xAxis=Data[:,t_], yAxis=Data[:,NA_]/settings["figure.num.y.normalize"], \
+    config = { **( lcf.load__config() ), **settings["figure.num.config"] }
+    fig    = gpl.gplot1D( config=config, pngFile=settings["figure.num.config"]["figure.pngFile"])
+    fig.add__plot( xAxis=Data[:,t_], yAxis=Data[:,NA_], \
                    color="C0", label=settings["figure.num.label.A"] )
-    fig.add__plot( xAxis=Data[:,t_], yAxis=Data[:,NB_]/settings["figure.num.y.normalize"], \
+    fig.add__plot( xAxis=Data[:,t_], yAxis=Data[:,NB_], \
                    color="C1", label=settings["figure.num.label.B"] )
-    fig.add__legend()
+    fig.set__legend()
     fig.set__axis()
     fig.save__figure()
 
     # ------------------------------------------------- #
     # --- [4] plot ( Activity )                     --- #
     # ------------------------------------------------- #
-    config["xTitle"]         =   settings["figure.act.xTitle"]
-    config["yTitle"]         =   settings["figure.act.yTitle"]
-    config["plt_xRange"]     = [ settings["figure.act.xMinMaxNum"][min_],
-                                 settings["figure.act.xMinMaxNum"][max_] ]
-    config["plt_yRange"]     = [ settings["figure.act.yMinMaxNum"][min_],
-                                 settings["figure.act.yMinMaxNum"][max_] ]
-    config["xMajor_Nticks"]  =   settings["figure.act.xMinMaxNum"][num_]
-    config["yMajor_Nticks"]  =   settings["figure.act.yMinMaxNum"][num_]
-    fig     = pl1.plot1D( config=config, pngFile=settings["figure.act.pngFile"] )
-    fig.add__plot( xAxis=Data[:,t_], yAxis=Data[:,AA_]/settings["figure.act.y.normalize"],\
-                   color="C0", label=settings["figure.act.label.A"] )
-    fig.add__plot( xAxis=Data[:,t_], yAxis=Data[:,AB_]/settings["figure.act.y.normalize"],\
-                   color="C1", label=settings["figure.act.label.B"] )
-    fig.add__legend()
-    fig.set__axis()
+    config = { **( lcf.load__config() ), **settings["figure.act.config"] }
+    fig    = gpl.gplot1D( config=config, pngFile=settings["figure.act.config"]["figure.pngFile"])
+    fig.add__plot ( xAxis=Data[:,t_], yAxis=Data[:,AA_],\
+                    color="C0", label=settings["figure.act.label.A"] )
+    fig.add__plot ( xAxis=Data[:,t_], yAxis=Data[:,AB_],\
+                    color="C1", label=settings["figure.act.label.B"] )
+    fig.add__plot2( xAxis=Data[:,t_], yAxis=Data[:,CB_],\
+                    color="C2", label=settings["figure.act.label.C"] )
+    fig.add__cursor( xAxis=365.0, linestyle="--", linewidth=1.2, color="lightgrey" )
+    fig.set__legend ()
+    fig.set__axis   ()
+    fig.set__axis2  ()
+    fig.save__figure()
+    
+    # ------------------------------------------------- #
+    # --- [5] plot ( inventory )                    --- #
+    # ------------------------------------------------- #
+    config = { **( lcf.load__config() ), **settings["figure.inv.config"] }
+    fig    = gpl.gplot1D( config=config )
+    fig.add__plot ( xAxis=Data[:,t_], yAxis=Data[:,RM_], \
+                    color="C3", label=settings["figure.inv.label.I"] )
+    fig.add__plot2( xAxis=Data[:,t_], yAxis=Data[:,CB_], \
+                    color="C2", label=settings["figure.inv.label.C"] )
+    fig.add__cursor( xAxis=365.0, linestyle="--", linewidth=1.2, color="lightgrey" )
+    fig.set__legend ()
+    fig.set__axis   ()
     fig.save__figure()
 
-    
     return()
 
 
@@ -299,7 +338,7 @@ if ( __name__=="__main__" ):
     args        = parser.parse_args()
     settingFile = args.settingFile
     if ( settingFile is None ):
-        print( "[estimate__time_vs_yield.py] no --inpFile." )
+        print( "[estimate__time_vs_yield.py] no --settingFile." )
         if ( os.path.exists( default_settingFile ) ):
             settingFile = default_settingFile
             print( "[estimate__time_vs_yield.py] default : {} will be used."\
