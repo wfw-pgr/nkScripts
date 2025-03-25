@@ -34,9 +34,7 @@
               xsection.fit.Eth : 8.07 
            xsection.fit.method : linear 
                xsection.fit.p0 : None 
-                 plot.filename : png/dYield_vs_energy.png 
-                   plot.xRange : [0.0, 20.0, 11] 
-                   plot.yRange : [0.0, 10.0, 11] 
+                   plot.config : {'figure.pngFile': 'png/dYield_vs_energy.png', 'ax1.x.range': {'auto': False, 'min': 0.0, 'max': 60.0, 'num': 11}, 'ax1.y.range': {'auto': False, 'min': 0.0, 'max': 10.0, 'num': 11}} 
             plot.xsection.norm : 100.0 
               plot.photon.norm : 100000000.0 
               plot.dYield.norm : 1000000.0 

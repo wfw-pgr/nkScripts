@@ -3,9 +3,8 @@ import numpy                      as np
 import scipy.interpolate          as itp
 import scipy.integrate            as itg
 import scipy.optimize             as opt
-import nkUtilities.plot1D         as pl1
 import nkUtilities.load__config   as lcf
-import nkUtilities.configSettings as cfs
+import nkUtilities.gplot1D        as gp1
 
 
 # ========================================================= #
@@ -333,27 +332,21 @@ def draw__figures( params=None, EAxis=None, pf_fit=None, xs_fit=None, \
     # ------------------------------------------------- #
     # --- [2] configure plot                        --- #
     # ------------------------------------------------- #
-    config                   = lcf.load__config()
-    config                   = cfs.configSettings( configType="plot.def", config=config )
-    config["FigSize"]        = (4.5,4.5)
-    config["plt_position"]   = [ 0.16, 0.16, 0.94, 0.94 ]
-    config["plt_xAutoRange"] = False
-    config["plt_yAutoRange"] = False
-    config["plt_xRange"]     = [ params["plot.xRange"][min_], params["plot.xRange"][max_] ]
-    config["plt_yRange"]     = [ params["plot.yRange"][min_], params["plot.yRange"][max_] ]
-    config["xMajor_Nticks"]  = int( params["plot.xRange"][num_] )
-    config["yMajor_Nticks"]  = int( params["plot.yRange"][num_] )
-    config["plt_marker"]     = "o"
-    config["plt_markersize"] = 1.0
-    config["plt_linestyle"]  = "-"
-    config["plt_linewidth"]  = 1.2
-    config["xTitle"]         = "Energy (MeV)"
-    config["yTitle"]         = "$dY, \ \phi, \ \sigma$"
 
-    # ------------------------------------------------- #
-    # --- [3] plot                                  --- #
-    # ------------------------------------------------- #
-    fig     = pl1.plot1D( config=config, pngFile=params["plot.filename"] )
+    config   = lcf.load__config()
+    config_  = {
+        "figure.size"        : [4.5,4.5],
+        "figure.position"    : [ 0.16, 0.16, 0.94, 0.94 ],
+        "ax1.x.label"        : "Energy (MeV)", 
+        "ax1.y.label"        : "$dY, \ \phi, \ \sigma$", 
+        "plot.marker"        : "o",
+        "plot.markersize"    : 1.0,
+        "plot.linestyle"     : "-", 
+        "legend.fontsize"    : 9.0, 
+    }
+    config = { **config, **config_ }
+    config = { **config, **params["plot.config"] }
+    fig    = gp1.gplot1D( config=config )
     fig.add__plot( xAxis=EAxis       , yAxis=dY_plot    , label=label_dY    , \
                    color="C0", marker="none"    )
     fig.add__plot( xAxis=EAxis       , yAxis=xs_fit_plot, label=label_xs_fit, \
@@ -364,8 +357,8 @@ def draw__figures( params=None, EAxis=None, pf_fit=None, xs_fit=None, \
                    color="C2", marker="none"    )
     fig.add__plot( xAxis=pf_raw[:,e_], yAxis=pf_raw_plot, label=label_pf_raw, \
                    color="C2", linestyle="none" )
-    fig.add__legend( FontSize=9.0 )
     fig.set__axis()
+    fig.set__legend()
     fig.save__figure()
     return()
 
