@@ -3,26 +3,30 @@
     /* ------------------------------------------------------------------- */
     /* ---  [1]  General settings                                      --- */
     /* ------------------------------------------------------------------- */
-    "results.summaryFile"          : "dat/summary.dat",
+    "results.summaryFile"          : "dat/g3n/summary_50MeV.dat",
     "results.time.unit"            : "d",
-    "results.yieldFile"            : "dat/dYield_vs_energy.dat",
+    "results.yieldFile"            : "dat/g3n/dYield_vs_energy_50MeV.dat",
     "results.jsonFile"             : "dat/results.json",
     
     /* ------------------------------------------------------------------- */
     /* ---  [2]  target materials settings                             --- */
     /* ------------------------------------------------------------------- */
-    "target.g/cm3"                 :19.3,                           // Au
-    "target.g/mol"                 :197.0,                          // Au
-    "target.mass.mg"               :4.75,                           // (mg)
-    "target.activity.Bq"           :null,                           // (Bq)
-    "target.halflife"              :{ "value":  null, "unit":"y" }, // (Au-197)
-    "product.halflife"             :{ "value":  6.16, "unit":"d" }, // (Au-196)
-    "decayed.halflife"             :{ "value":  null, "unit":"d" }, // (None)
+    "target.g/cm3"                 :    4.9,                         // Ra
+    "target.g/mol"                 :  297.0,                         // RaCl2
+    "target.mass.mg"               : 2.7e-6,                         // (mg)
+    "target.activity.Bq"           :100.0e3,                         // (Bq)
+    "target.halflife"              :{ "value":  1600, "unit":"y" },  // (Ra-226)
+    // "product.halflife"             :{ "value":  14.9, "unit":"d" },  // (Ra-225) 
+    // "decayed.halflife"             :{ "value":   9.9, "unit":"d" },  // (Ac-225)
+    // "product.halflife"             :{ "value":  3.63, "unit":"d" },  // (Ra-224)
+    // "decayed.halflife"             :{ "value":  55.6, "unit":"s" },  // (Rn-220)
+    "product.halflife"             :{ "value":  11.4, "unit":"d" },  // (Ra-223)
+    "decayed.halflife"             :{ "value":  3.96, "unit":"s" },  // (Rn-219)
     
     // -- thick -- //  [ "Bq", "direct", "fluence-Bq", "fluence-mass" ]
     "target.thick.type"            :"fluence-mass",
     "target.thick.direct.mm"       :1.0 ,                           // if ( type == direct )
-
+    
     // -- area  -- //  [ "direct", "disk" ]
     "target.area.type"             :"disk",                         // [ "direct", "disk" ]
     "target.area.direct.cm2"       :7.07e-2,                        // if ( type == direct )
@@ -36,7 +40,6 @@
     "integral.EAxis.min"           :0.0,           // (MeV)
     "integral.EAxis.max"           :50.0,          // (MeV)
     "integral.EAxis.num"           :501,           // 
-
     
     /* ------------------------------------------------------------------- */
     /* ---  [4]  photon flux settings                                  --- */
@@ -44,14 +47,16 @@
     /*  photon flux's unit  == ( photons/MeV/uA/s )                        */
     /* ------------------------------------------------------------------- */
     "photon.filetype"              : "phits-out",  // ["phits-out","energy-fluence"]
-    "photon.filename"              : "out/fluence_energy__Au197gnAu196_20240711.dat",
+    "photon.filename"              : "dat/fluence/fluence_50MeV.dat",
     "photon.bin2point.convert"     : "edge",       // convert binned data into E v.s. photons
     "photon.fit.method"            : "linear",     // [ "linear", "gaussian" ]
     "photon.fit.p0"                :  null,        // initial parameter for fitting.
-    "photon.fit.Eth"               :  8.07,        // (MeV)
+    // "photon.fit.Eth"               :   6.4,        // (MeV)
+    // "photon.fit.Eth"               :  11.3,        // (MeV)
+    "photon.fit.Eth"               :  17.7,        // (MeV)
     "photon.beam.current.sim"      : 100.0,        // (uA) current in PHITS sim.
-    "photon.beam.current.use"      :   6.2,        // (uA) current to be assumed.
-    "photon.beam.duration"         : 1.667e-1,     // (h)
+    "photon.beam.current.use"      : 100.0,        // (uA) current to be assumed.
+    "photon.beam.duration"         : 100.0,        // (h)
     /* ------------------------------------------------------------------- */
     /* --- photon.filetype=="phits-out"         T-Track output file        */
     /*                               ( e-lower, e-upper, fluence, error )  */
@@ -65,13 +70,13 @@
     /* ------------------------------------------------------------------- */
     /*  cross-section's unit   ( TENDL: (MeV,mb), JENDL: (eV,b) )          */
     /* ------------------------------------------------------------------- */
-    // "xsection.filename"            :"xs/xs__TENDL_Ra226_gn_Ra225_2019.dat",
-    "xsection.filename"            :"xs/xs__JENDL5_Au197_gn_Au196_gs.dat",
-    // "xsection.filename"            :"xs/xs__JENDL5_Au197_gn_Au196_m1.dat",
-    "xsection.database"            :"JENDL",       // JENDL (eV-barn) or TENDL (MeV-mb)
-    "xsection.fit.Eth"             :8.07,          // (MeV)
-    "xsection.fit.method"          :"linear",      // [ "linear", "gaussian", "log-poly5th" ]
-    "xsection.fit.p0"              :null,          // linear
+    "xsection.filename"            :"dat/xs/xs__rp088223.tot",
+    "xsection.database"            : "TENDL",         // JENDL (eV-barn) or TENDL (MeV-mb)
+    // "xsection.fit.Eth"             :    6.4,         // (MeV)
+    // "xsection.fit.Eth"             :    11.3,         // (MeV)
+    "xsection.fit.Eth"             :    17.7,         // (MeV)
+    "xsection.fit.method"          :"linear",         // [ "linear", "gaussian", "log-poly5th" ]
+    "xsection.fit.p0"              :    null,         // linear
     // "xsection.fit.method"          :"log-poly5th", // [ "linear", "gaussian", "log-poly5th" ]
     // "xsection.fit.p0"              :null,          // linear
 
@@ -88,5 +93,4 @@
     "plot.photon.norm"             :1.0e4,         // (photons/MeV/uA/s)
     "plot.dYield.norm"             :1.0e4,         // (atoms/MeV/s)  
     "plot.norm.auto"               :true,          // if true, automatic range
-    
 }
