@@ -31,7 +31,17 @@ def materials__fromJSON( inpFile=None, outFile=None, keys=None ):
     # --- [3] format as a material_phits.inp        --- #
     # ------------------------------------------------- #
     ret = generate__materialFile( matDB=matDB, outFile=outFile, settings=settings, keys=keys )
-    return()
+
+    # ------------------------------------------------- #
+    # --- [4] pack density and number info          --- #
+    # ------------------------------------------------- #
+    dnDB = {}
+    for key in keys:
+        dkey       = matDB[key]["Name"] + ".density"
+        nkey       = matDB[key]["Name"] + ".matNum"
+        dnDB[dkey] = ( matDB[key] )["Density"]
+        dnDB[nkey] = ( matDB[key] )["matNum"]
+    return( dnDB )
 
 
 # ========================================================= #
@@ -77,6 +87,7 @@ def generate__materialFile( outFile=None, matDB=None, keys=None, settings=None )
             .format( item["Name"]+".Density", item["Density"] )
         block1       += section + comment + matNumSection + "".join( composit_note ) + "\n"
         block1       += matNumDefine + DensityDefine
+        item["matNum"] = ik+1
 
     # ------------------------------------------------- #
     # --- [3] matNameColor section                  --- #
@@ -91,9 +102,9 @@ def generate__materialFile( outFile=None, matDB=None, keys=None, settings=None )
             .format( ik+1, item["Name"], settings["characterSize"], item["Color"] )
         block2 += line
     block    = block1 + "\n" + block2
-        
+
     # ------------------------------------------------- #
-    # --- [3] save in a file                        --- #
+    # --- [4] save in a file                        --- #
     # ------------------------------------------------- #
     with open( outFile, "w" ) as f:
         f.write( block )

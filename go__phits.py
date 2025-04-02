@@ -23,19 +23,20 @@ def go__phits():
     # --- [1] arguments                             --- #
     # ------------------------------------------------- #
     parser = argparse.ArgumentParser(description="PHITS driver program.")
-    parser.add_argument( "inpFile"             , help="PHITS's input file path." )
-    parser.add_argument( "--phits_win"         , help="PHITS's path in windows." )
-    parser.add_argument( "--phits_lin"         , help="PHITS's path in linux."   )
-    parser.add_argument( "--materialFile"         , help="materials database file." )
-    parser.add_argument( "-c", "--compile_mode" , help="pre-compile input file, no execution", \
-                         action="store_true" )
-    parser.add_argument( "-m", "--material_make", help="compile materialFile ( def. inp/materials.json )", \
-                         action="store_true" )
+    parser.add_argument( "inpFile"              , help="PHITS's input file path." )
+    parser.add_argument( "--phits_win"          , help="PHITS's path in windows." )
+    parser.add_argument( "--phits_lin"          , help="PHITS's path in linux."   )
+    parser.add_argument( "--materialFile"       , help="materials database file.", \
+                         default=default_materialFile )
+    parser.add_argument( "-c", "--compile_mode" , action="store_true", \
+                         help="pre-compile input file, no execution"   )
+    parser.add_argument( "-m", "--material_make", action="store_true", \
+                         help="compile materialFile ( def. inp/materials.json )" )
     args          = parser.parse_args()
     inpFile       = args.inpFile
     materialFile  = args.materialFile
-    if ( ( args.material_make ) and ( materialFile is None ) ):
-        materialFile = default_materialFile
+    # if ( ( args.material_make ) and ( materialFile is None ) ):
+    #     materialFile = default_materialFile
     sct.show__section( "Conversion :: _phits.inp >> .inp File", length=71 )
     
     # ------------------------------------------------- #
@@ -68,22 +69,21 @@ def go__phits():
     if ( os.path.exists( inpFile ) is False ):
         print( "\n" + "[go__phits.py] Can't Find input file... :: {}\n".format( inpFile ) )
         sys.exit( "[ ERROR -- stop ]" )
-    if ( materialFile is not None ):
-        if ( os.path.exists( materialFile ) is False ):
-            print( "\n[go__phits.py] Can't Find material file... :: {}\n".format(materialFile) )
-            sys.exit( "[ ERROR -- stop ]" )
-
+    if ( os.path.exists( materialFile ) is False ):
+        print( "\n[go__phits.py] Can't Find material file... :: {}\n".format(materialFile) )
+        sys.exit( "[ ERROR -- stop ]" )
+        
     # ------------------------------------------------- #
     # --- [4] convert material database File        --- #
     # ------------------------------------------------- #
-    if ( materialFile is not None ):
-        mfj.materials__fromJSON( inpFile=materialFile )
-        
+    material_dn = mfj.materials__fromJSON( inpFile=materialFile )
+    
     # ------------------------------------------------- #
     # --- [5] precompile parameterFile              --- #
     # ------------------------------------------------- #
     precomp = ppf.precompile__parameterFile( inpFile=inpFile, outFile=exeFile, silent=True, \
-                                             comment_mark="$", variable_mark="@" )
+                                             table  =material_dn, comment_mark="$", \
+                                             variable_mark="@" )
     if ( args.compile_mode ):
         return( precomp )
 
