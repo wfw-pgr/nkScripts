@@ -30,6 +30,7 @@ def build( ctx, inpFile="inp/main_phits.inp", materialFile="inp/materials.json",
     precomp = ppf.precompile__parameterFile( inpFile=inpFile, outFile=exeFile, \
                                              table=material_dn, silent=True, \
                                              comment_mark="$",  variable_mark="@" )
+
     
 # ========================================================= #
 # ===  run PHITS calculation                            === #
@@ -59,10 +60,16 @@ def run( ctx, phits_cmd="phits.sh", exeFile="inp/execute_phits.inp" ):
 @invoke.task
 def post( ctx ):
     # ------------------------------------------------- #
-    # --- [1] commands                              --- #
+    # --- [1] post execution commands               --- #
     # ------------------------------------------------- #
-    pass
+    command1 = "for f in `ls out/*.eps`; do gs -dSAFER -dEPSCrop "\
+        "-sDEVICE=pdfwrite -o ${f%.eps}_%d.pdf ${f};done"
+    command2 = "mogrify -background white -alpha off -density 400 "\
+        "-resize 50%x50% -path png -format png out*.pdf"
+    subprocess.run( command1, shell=True )
+    subprocess.run( command2, shell=True )
     return()
+    
 
 
 # ========================================================= #
